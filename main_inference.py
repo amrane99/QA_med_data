@@ -104,10 +104,10 @@ if __name__ == "__main__":
 
     
     # Preprocess data
-    if preprocess:
-        preprocessed, error = preprocess_data(config)
-        if not preprocessed:
-            print('Data could not be preprocessed. The following error occured: {}.'.format(error))
+
+    preprocessed, error = preprocess_data(config)
+    if not preprocessed:
+        print('Data could not be preprocessed. The following error occured: {}.'.format(error))
 
     # Do inference
     inferred, error = do_inference(config)
