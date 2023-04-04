@@ -55,9 +55,6 @@ class DataConnector():
     def loadData(self):
         r"""Read all data specified inside the input workflow dir"""
         
-        #print(f"Workflow Dir: {os.environ['WORKFLOW_DIR']}")
-        #print(f"Op In Dir: {os.environ['OPERATOR_IN_DIR']}")
-        #print(f"Op Out Dir: {os.environ['OPERATOR_OUT_DIR']}")
         
         batch_folders = [f for f in glob.glob(os.path.join('/', os.environ['WORKFLOW_DIR'], os.environ["OPERATOR_IN_DIR"],'*'))]
         for batch_element_dir in batch_folders:

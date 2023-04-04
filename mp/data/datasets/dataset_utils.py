@@ -62,7 +62,6 @@ def check_correct_nr_labels(labels, instances):
     with the dataset masks.
     """
     nr_labels = len(get_mask_labels(instances))
-    print(nr_labels)
     assert nr_labels <= len(labels), "There are mask indexes not accounted for in the manually supplied label list"
     if nr_labels < len(labels):
         print('Warning: Some labels are not represented in the data')
@@ -83,7 +82,15 @@ def get_normalization_values(instances):
         count += nb_pixels
     return {'mean': mean, 'std': torch.sqrt(std - mean ** 2)}
 
+'''def delete_images_and_labels(path):
+    filenames = os.listdir(path)
+    for name in filenames:
+        shutil.rmtree(os.path.join(path, name))'''
+
+
+
 def delete_images_and_labels(path):
+
     r"""This function deletes every nifti and json (labels) file in the path."""
     # Walk through path and delete all .nii files
     print('Walk trough directory \'{}\' and delete nifti files..'.format(path))

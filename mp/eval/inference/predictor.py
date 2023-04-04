@@ -59,8 +59,6 @@ class Predictor2D(Predictor):
         # Get original size
         original_size = subject['y'].data.shape
         original_size_2d = original_size[:3]
-        print(original_size)
-        print(original_size_2d)
 
         pred = []
         with torch.no_grad():
@@ -138,7 +136,7 @@ class GridPredictor(Predictor):
             patch_overlap=self.patch_overlap)
 
         # Make sure the correct transformations are performed before predicting
-        patch_loader = torch.utils.data.DataLoader(grid_sampler, batch_size=5)
+        patch_loader = torch.utils.data.DataLoader(grid_sampler, batch_size=5, num_workers = 5) #NEW numworkers geaendert von 0 auf 5
         patch_aggregator = torchio.inference.GridAggregator(grid_sampler)
         with torch.no_grad():
             for patches_batch in patch_loader:            

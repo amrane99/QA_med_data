@@ -35,8 +35,9 @@ class ImgQualityQuantifier(QualityQuantifier):
                 that all values are between 0 and 1. The array follows the
                 dimensions (channels, width, height, depth), where channels == 1
 
-        Returns (dict[str -> float]): a dictionary linking metric names to float
-            quality estimates
+        Returns:
+            fully_captured (bool): a boolean if the hippocampus is fully captured. 
+            yhat (float): a float that indicates the quality of the image concerning the given artefact.
         """
         raise NotImplementedError
         return {'metric_1', 0.0, 'metric_2', 0.0}
@@ -61,8 +62,9 @@ class SegImgQualityQuantifier(QualityQuantifier):
                 that all values are between 0 and 1. The array follows the
                 dimensions (channels, width, height, depth), where channels == 1
 
-        Returns (dict[str -> float]): a dictionary linking metric names to float
-            quality estimates
+        Returns:
+            fully_captured (bool): a boolean if the hippocampus is fully captured. 
+            yhat (float): a float that indicates the quality of the image concerning the given artefact.
         """
         raise NotImplementedError
         return {'metric_1', 0.0, 'metric_2', 0.0}

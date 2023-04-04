@@ -7,6 +7,7 @@ from mp.data.datasets.dataset import Dataset, Instance
 import mp.data.datasets.dataset_utils as du
 import torchio
 import torch
+import SimpleITK as sitk
 
 class CNNInstance(Instance):
     def __init__(self, x_path, y_label, name=None, class_ix=0, group_id=None):
@@ -25,12 +26,17 @@ class CNNInstance(Instance):
 
         Note that torchio images have the shape (channels, w, h, d)
         """
+
         assert isinstance(x_path, str)
         assert torch.is_tensor(y_label) or y_label is None
+        '''img = sitk.ReadImage(x_path) #NEW
+        x = torch.from_numpy(sitk.GetArrayFromImage(img)).unsqueeze_(0)
+        x = torchio.Image(tensor = x)#, type=torchio.INTENSITY)'''
         x = torchio.Image(x_path, type=torchio.INTENSITY)
         y = y_label
         self.shape = x.shape
-        super().__init__(x=x, y=y, name=name, class_ix=class_ix, 
+
+        super().__init__(x=x, y=y, name=name, class_ix=0, 
             group_id=group_id)
 
     def get_subject(self):

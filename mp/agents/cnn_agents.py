@@ -8,12 +8,13 @@ from mp.paths import telegram_login
 from mp.utils.update_bots.telegram_bot import TelegramBot
 from mp.utils.agents.save_restore import save_state as external_save_state
 from mp.utils.agents.save_restore import restore_state as external_restore_state
+import numpy as np
 
 class NetAgent(Agent):
     r"""An Agent for CNN models."""
     def __init__(self, lr_decay, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.bot = TelegramBot(telegram_login)
+        # self.bot = TelegramBot(telegram_login) nbtn
         self.lr_decay = lr_decay
 
     def save_state(self, states_path, state_name, optimizer=None, overwrite=False,
@@ -43,7 +44,7 @@ class NetAgent(Agent):
               accuracy_val_detailed=list(), save_interval=10,
               msg_bot=True, bot_msg_interval=10, store_data=False):
         r"""Train a model through its agent. Performs training epochs, 
-        tracks metrics and saves model states.
+        tracks metrics, creates confusion matrix and saves model states.
         """
         assert start_epoch < nr_epochs, 'Start epoch needs to be smaller than the number of epochs!'
         if msg_bot == True:
@@ -77,7 +78,7 @@ class NetAgent(Agent):
                 if store_data:
                     results_y.extend(y.cpu().detach().numpy().tolist())
                     results_yhat.extend(yhat.cpu().detach().numpy().tolist())
-                optimizer.zero_grad()
+                optimizer.zero_grad(set_to_none=True) #NBTN set_to_none =False --> True
                 loss.backward()
                 optimizer.step()
             losses_cum.append([epoch+1, sum(epoch_loss) / total])
@@ -141,6 +142,31 @@ class NetAgent(Agent):
 
         # Return losses
         return losses, losses_cum, losses_val, losses_cum_val, accuracy, accuracy_detailed, accuracy_val, accuracy_val_detailed
+    
+    def calculate_metrics(self, y_hat_table):
+        TP_class = np.zeros(5) #for each class, starting with no artefact
+        FP_class = np.zeros(5) #for each class, starting with no artefact
+        TN_class = np.zeros(5) #for each class, starting with no artefact
+        FN_class = np.zeros(5) #for each class, starting with no artefact
+        
+        for i in range(5):
+            TP_class[i] = y_hat_table[i,i]
+            FN_class[i] = np.sum(y_hat_table[i,:]) - y_hat_table[i,i]
+            FP_class[i] = np.sum(y_hat_table[:,i]) - y_hat_table[i,i]
+            TN_class[i] = np.sum(np.sum(y_hat_table)) - TP_class[i] - FN_class[i] - FP_class[i]  
+            
+        TP = np.sum(TP_class)
+        FP = np.sum(FP_class)
+        TN = np.sum(TN_class)
+        FN = np.sum(FN_class)
+
+        sensivity = TP/(TP+FN)
+        specificity = TN/(TN+FP)
+        precision = TP/(TP+FP)
+        accuracy= (TP+TN)/(TP+FN+FP+TN)
+        return sensivity, specificity, precision, accuracy         
+            
+
 
     def test(self, loss_f, test_dataloader, msg_bot=True, store_data=False):
         if msg_bot == True:
@@ -151,8 +177,13 @@ class NetAgent(Agent):
         total = 0
         losses_cum = 0
         correct = 0
+        mod_yhat_list = list() # save all mod_yhat
+        labels_list= list() # save all labels
+        # initialize confusion matrix
+        y_hat_table = np.zeros([5,5])
         with torch.no_grad():
             for idx, (x, y) in enumerate(test_dataloader):
+                               
                 x, y = x.to(self.device), y.to(self.device)
                 yhat = self.model(x)
                 loss = loss_f(yhat, torch.max(y, 1)[1])
@@ -161,18 +192,33 @@ class NetAgent(Agent):
                 losses_cum += loss.item()
                 _, mod_yhat = torch.max(yhat, 1)
                 _, labels = torch.max(y, 1)
+
+                for i in range(len(labels)):
+                    mod_yhat_list.append(mod_yhat[i])
+                    labels_list.append(labels[i])
+
                 correct += (mod_yhat == labels).sum().item()
+
+                # Fill confusion matrix
+                for ind in range(len(mod_yhat)):
+                    y_hat_table[labels[ind], mod_yhat[ind]] += 1
                 accuracy.append([idx+1, 100 * (mod_yhat == labels).sum().item() / y.size(0)])
                 if store_data:
                     accuracy_detailed.extend(list(zip(y.cpu().numpy().tolist(),
                                                     yhat.cpu().numpy().tolist())))
+        
+        metrics = self.calculate_metrics(y_hat_table)
         print('Testset --> Overall Loss: {:.4}.'.format(losses_cum / total))
         print('Accuracy of the cnn model on the test set: %d %%' % (
             100 * correct / total))
+        
+
         if msg_bot == True:
             self.bot.send_msg('Testset --> Overall Loss: {:.4}.'.format(losses_cum / total))
             self.bot.send_msg('Accuracy of the cnn model on the test set: %d %%' % (
             100 * correct / total))
             
         # Return losses
-        return losses, losses_cum, accuracy, accuracy_detailed
+        return losses, losses_cum, accuracy, accuracy_detailed, y_hat_table , metrics
+    
+    

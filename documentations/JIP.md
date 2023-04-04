@@ -1,5 +1,5 @@
 # Artifact Classifiers
-With this branch, 6 artifact classifiers (blur, ghosting, motion, noise, resolution and spike) can be trained, retrained with new data, tested and used for inference. The classifiers provide information about the quality of the provided CT scans. If the quality is perfect, ie. no artifact is visible in a CT scan, the classifier for the corresponding artifact will return 1. If the artifact is present and the image has a bad quality, the classifier will return 0. Everyhting in between can be interpreted accordingly. For a CT scan with a little bit of blurring in it, the blur classifier would return a quality metric of 0.9 eg.
+With this branch, 5 artifact classifiers (blur, ghosting, motion, noise and spike) can be trained, retrained with new data, tested and used for inference. The classifiers provide information about the quality of the provided CT scans. If the quality is perfect, ie. no artifact is visible in a CT scan, the classifier for the corresponding artifact will return 1. If the artifact is present and the image has a bad quality, the classifier will return 0. Everyhting in between can be interpreted accordingly. For a CT scan with a little bit of blurring in it, the blur classifier would return a quality metric of 0.9 eg.
 
 
 ## Table Of Contents
@@ -17,6 +17,8 @@ With this branch, 6 artifact classifiers (blur, ghosting, motion, noise, resolut
   * [Test In Distribution](#test-in-distribution)
   * [Test Out Of Distribution](#test-out-of-distribution)
   * [Test In and Out Of Distribution](#test-in-and-out-of-distribution)
+
+[Training Segmentation Network](#segmentation)
 
 [Performing inference](#performing-inference)
 
@@ -62,9 +64,9 @@ All the provided methods that will be introduced later on, use more or less the 
 
 | Tag_name | description | required | choices | default | 
 |:-:|-|:-:|:-:|:-:|
-| `--noise_type` | Specify the CT artifact on which the model will be trained. | no | `blur, ghosting, motion, noise, resolution, spike` | `blur` |
-| `--mode` | Specify in which mode to use the model. | yes | `preprocess, train, retrain, testID, testOOD, testIOOD, inference` | -- |
-| `--datatype` | Only necessary for `--mode preprocess`. Indicates which data should be preprocessed. | no | `all, train, test, inference` | `all` |
+| `--noise_type` | Specify the CT artifact on which the model will be trained. | no | `blur, ghosting, motion, noise, spike` | `blur` |
+| `--mode` | Specify in which mode to use the model. | yes | `preprocess, train, retrain, testID, testOOD, testIOOD, inference, segmentation` | -- |
+| `--datatype` | Only necessary for `--mode preprocess`. Indicates which data should be preprocessed. | no | `all, train, test, inference, segmentation` | `all` |
 | `--device` | Use this to specify which GPU device to use. | no | `[0, 1, ..., 7]` | `4` |
 | `--restore` | Set this for restoring/to continue preprocessing or training. | no | -- | `False` |
 | `--store_data` | Store the actual datapoints and save them as .npy after training. | no | -- | `False` |
@@ -105,6 +107,10 @@ Let's look at some use cases:
     ```bash
     <your_anaconda_env> $ python JIP.py --mode preprocess --datatype test --try_catch_repeat 3 --idle_time 180
     ```
+5. Preprocess segmentation data by using GPU device 3_
+    ```bash
+    <your_anaconda_env> $ python JIP.py --mode preprocess --datatype segmentation --device 3
+    ```
 
 ## Training classifiers
 When training classifiers from the beginning, one can simply execute the following command with respect to the possible arguments: 
@@ -115,10 +121,10 @@ When training classifiers from the beginning, one can simply execute the followi
 				    --idle_time <time_in_sec> --use_telegram_bot --restore]
 ```
 Again, the restore flag can be used in case of an errorenous termination of the code before the actual termination of the training to continue with the training from the last checkpoint.
-In the [JIP.py](../JIP.py) file is a config dictionary that can be modified by the programmer as well, in which one can specify if the dataset needs to be augmented or not. Note, that the augmentation is only implemented for the [Grand Challenge](https://covid-segmentation.grand-challenge.org) and [Decathlon Lung Dataset](http://medicaldecathlon.com), since the labels for the transformed files need to be generated based on the manually created labels. For now, if the programmer wants to perform augmentation on a new dataset, this needs to be changed/added in the code, for instance, the [dataset_JIP_cnn.py](../mp/data/datasets/dataset_JIP_cnn.py) needs to be updated. If no augmentation is necessary, only the provided data will be used, ie. the code does not have to be modified at all for this.
+In the [JIP.py](../JIP.py) file is a config dictionary that can be modified by the programmer as well, in which one can specify if the dataset needs to be augmented or not. If no augmentation is necessary, only the provided data will be used.
 
 ## Retraining classifiers
-The retraining of classifiers is used for retraining already trained classifiers with new data. This is mainly used by institutes that are provided with pre-trained classifiers and then can retrain them with their own in-house dataset. Those pre-trained classifiers are trained on a mixed dataset including one in-house, the [Grand Challenge](https://covid-segmentation.grand-challenge.org) and [Decathlon Lung Dataset](http://medicaldecathlon.com) dataset whereas data augmentation has been performed on those datasets as well to ensure equally distributed data among all intensity classes during training. To run such a retrain, obviously the corresponding classifier needs to exist and the own in-house data needs to be stored under `JIP/train_dirs/input` and preprocessed as well. The training can then be started using the following command:
+The retraining of classifiers is used for retraining already trained classifiers with new data. This is mainly used by institutes that are provided with pre-trained classifiers and then can retrain them with their own in-house dataset. Those pre-trained classifiers are trained on a mixed dataset including the DecathHip and the HarP datasets whereas data augmentation has been performed on those datasets as well to ensure equally distributed data among all intensity classes during training. To run such a retrain, obviously the corresponding classifier needs to exist and the own in-house data needs to be stored under `JIP/train_dirs/input` and preprocessed as well. The training can then be started using the following command:
 ```bash
 <your_anaconda_env> $ python JIP.py --mode retrain --device <GPU_ID>
 				    --datatype train --noise_type <artifact>
@@ -127,36 +133,26 @@ The retraining of classifiers is used for retraining already trained classifiers
 ```
 
 ## Testing classifiers
-Testing the performance and accuracy of all classifiers can be performed in two ways. An In-Distribution (ID) test as well as an Out-Of_Distribution (OOD) test can be performed. Both tests are based on the dataset names that are used during training, so if new data is used, ie. different datasets, the ID and OOD test needs to be adapted since the selection of the data for the test is based on the dataset name. Since this varies from use case to use case, this needs to be adapted by the programmer in [dataset_JIP_cnn.py](../mp/data/datasets/dataset_JIP_cnn.py) as well when this is desired to use. Notebooks are provided in the [notebooks folder](../notebooks) and can be reloaded after a test is performed. Every Notebook automatically loads the data and performs the corresponding calculations once the paths is set in those Notebooks. So the user only needs to change the path in the Notebooks. In those Notebooks, the accuracy will be calculated, but also confusion matrices will be extracted from the stored data as well.
+Testing the performance and accuracy of all classifiers is performed on the data stored under `JIP/test_dirs/input`. The data needs to be preprocessed.
 
-### Test In Distribution
-For performing an ID-test, the following command can be used:
+For performing a test, the following command can be used:
 ```bash
-<your_anaconda_env> $ python JIP.py --mode testID --device <GPU_ID>
+<your_anaconda_env> $ python JIP.py --mode test --device <GPU_ID>
 				    --datatype test --noise_type <artifact>
 				    [--use_telegram_bot --store_data]
 ```
 
-### Test Out Of Distribution
-For performing an OOD-test, the following command can be used:
+## Training Segmentation Network
+For training a UNet for segmentation, the data in `JIP/train_dirs/input` is used. It needs to be preprocessed with the flag --datatype segmentation to store it in the desired file structure. The UNet is used while performing the inference to predict if the hippocampus is fully captured.
+
+To train the Segmentation Network on GPU device 4 use the command:
 ```bash
-<your_anaconda_env> $ python JIP.py --mode testOOD --device <GPU_ID>
-				    --datatype test --noise_type <artifact>
-				    [--store_data --use_telegram_bot]
+<your_anaconda_env> $ python JIP.py --mode segmentation --device 4
 ```
 
-### Test In and Out Of Distribution
-For performing an ID-test followed by an OOD-test without executing both commands, the following command can be used:
-```bash
-<your_anaconda_env> $ python JIP.py --mode testIOOD --device <GPU_ID>
-				    --datatype test --noise_type <artifact>
-				    [--use_telegram_bot --store_data]
-```
-
-Note: If the Notebooks are used, remember to set the `--store_data` flag when performing any test, since this stored data is crucial for the calculations performed in the Notebooks.
 
 ## Performing inference
-Performing inference on data is very straight-forward. It is important that all 6 artifact classifiers are trained and do exist in `JIP/data_dirs/persistent`. The provided preprocessed data from `JIP/data_dirs/input` will then be used and the results for every scan per classifier will be stored in a metrics file, `metrics.json`. After the sucessfull termination the file will be located at `JIP/data_dirs/output`. To start the inference, the following command needs to be executed:
+Performing inference on data is very straight-forward. It is important that all 5 artifact classifiers are trained and do exist in `JIP/data_dirs/persistent`. The provided preprocessed data from `JIP/data_dirs/input` will then be used and the results for every scan per classifier will be stored in a metrics file, `metrics.json`. After the sucessfull termination the file will be located at `JIP/data_dirs/output`. To start the inference, the following command needs to be executed:
 ```bash
 <your_anaconda_env> $ python JIP.py --mode inference --device <GPU_ID>
 				   [--use_telegram_bot]
@@ -166,15 +162,15 @@ After sucessfull termination, the `metrics.json` file is generated and has the f
 ```
 {	
     "patient_00":	{
-                        "LFC": true,
-                        "blur": 0.5,
-                        "ghosting": 0.72,
-                        "motion": 0.98,
-                        "noise": 0.67,
-                        "resolution": 0.82,
-                        "spike": 0.96
+                        "HFC": true,
+                        "blur": 0.2,
+                        "ghosting": 0.75,
+                        "motion": 1,
+                        "noise": 0.5,
+                        "resolution": 0.75,
+                        "spike": 1
                     },
     ...
 }
 ```
-For every patient folder in `JIP/data_dirs/input` the same 6 quality metrics will be calculated as well as the `Lung Fully Captured (LFC)` metric, which indicates if the lung in a CT scan is fully captured or if parts of the lungs are missing.
+For every patient folder in `JIP/data_dirs/input` the same 5 quality metrics will be calculated as well as the `Hippocampus Fully Captured (HFC)` metric, which indicates if the hippocampus in a MRI scan is fully captured or if parts of the hippocampus are missing.

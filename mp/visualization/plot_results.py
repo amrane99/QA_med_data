@@ -3,12 +3,8 @@
 # ------------------------------------------------------------------------------
 
 import os
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import math
-from mp.utils.seaborn.legend_utils import format_legend
-
 def plot_results(result, measures=None, save_path=None, save_name=None, 
     title=None, ending='.png', ylog=False, figsize=(10,5)):
     """Plots a data frame as created by mp.eval.Results
@@ -48,7 +44,6 @@ def plot_results(result, measures=None, save_path=None, save_name=None,
         ax.set_yscale('log')
     # Style legend
     titles = ['Metric', 'Data']
-    format_legend(ax, titles)
     # Set title
     if title:
         ax.set_title(title)
@@ -63,7 +58,7 @@ def plot_results(result, measures=None, save_path=None, save_name=None,
 
 def plot_dataframe(result, save_path=None, save_name=None, 
     title=None, ending='.png', x_name='Epoch', y_name='Value',
-    ylog=False, figsize=(10,5), xints=int, yints=int):
+    figsize=(10,5), xints=int, yints=int):
     """Plots a dataframe
 
     Args:
@@ -78,30 +73,16 @@ def plot_dataframe(result, save_path=None, save_name=None,
     """
     df = result
     assert type(xints)==type(yints), 'xints and yints need to be the same type!'
-    df[x_name] = df[x_name].astype(xints)
-    df[y_name] = df[y_name].astype(yints)
+
 
     # Start a new figure so that different plots do not overlap
-    plt.figure()
-    sns.set(rc={'figure.figsize':figsize})
+    plt.figure(figsize=figsize)
+
     # Plot
-    ax = sns.lineplot(x=df[x_name], 
-        y=df[y_name], 
-        alpha=0.7, 
-        data=df)
-    ax = sns.scatterplot(x=df[x_name], 
-        y=df[y_name], 
-        alpha=1., 
-        data=df)
-    # Optional logarithmic scale
-    if ylog:
-        ax.set_yscale('log')
-    # Style legend
-    titles = ['Metric', 'Data']
-    #format_legend(ax, titles)
-    # Set title
-    if title:
-        ax.set_title(title)
+    ax = plt.plot(df[x_name], df[y_name])
+    plt.title(title)
+    plt.xlabel(x_name)
+    plt.ylabel(y_name)
 
     # Save image
     if save_path:

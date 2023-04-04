@@ -1,6 +1,7 @@
 import os
 import time
 import argparse
+
 from mp.paths import JIP_dir, telegram_login
 from mp.utils.update_bots.telegram_bot import TelegramBot
 from train_restore_use_models.preprocess_data import preprocess_data
@@ -9,6 +10,8 @@ from train_restore_use_models.CNN_train_restore_use import restore_train_model
 from train_restore_use_models.CNN_train_restore_use import retrain_model
 from train_restore_use_models.CNN_train_restore_use import test_model
 from train_restore_use_models.CNN_train_restore_use import do_inference
+from mp.utils.Unet.train_unet import train
+
 
 # Structure of JIP_dir/data_dirs:
 # /
@@ -34,15 +37,16 @@ from train_restore_use_models.CNN_train_restore_use import do_inference
 
 if __name__ == "__main__": 
     # Build Argumentparser
+
     parser = argparse.ArgumentParser(description='Train, reterain or use a specified model to predict the quality of CT scans.')
-    parser.add_argument('--noise_type', choices=['blur', 'resolution', 'ghosting', 'noise',
+    parser.add_argument('--noise_type', choices=['blur', 'ghosting', 'noise',
                                                 'motion', 'spike'], required=False,
                         help='Specify the CT artifact on which the model will be trained. '+
                              'Default model type: blur.')
-    parser.add_argument('--mode', choices=['preprocess', 'train', 'retrain', 'testID', 'testOOD', 'testIOOD', 'inference'], required=True,
+    parser.add_argument('--mode', choices=['preprocess', 'train', 'retrain', 'test', 'inference', 'segmentation'], required=True,
                         help='Specify in which mode to use the model. Either train a model or use'+
                              ' it for predictions. This can also be used to preprocess data (be)for(e) training.')
-    parser.add_argument('--datatype', choices=['all', 'train', 'test', 'inference'], required=False,
+    parser.add_argument('--datatype', choices=['all', 'train', 'test', 'inference', 'segmentation'], required=False,
                         help='Only necessary for mode preprocessing. Indicates which data should be preprocessed.'+
                              ' If not specified, \'all\' will be used for preprocessing.')
     parser.add_argument('--device', action='store', type=int, nargs=1, default=4,
@@ -86,6 +90,7 @@ if __name__ == "__main__":
     try_catch = args.try_catch_repeat
     idle_time = args.idle_time
 
+
     if isinstance(cuda, list):
         cuda = cuda[0]
     if isinstance(try_catch, list):
@@ -111,6 +116,7 @@ if __name__ == "__main__":
     # Build environmental vars
     # -------------------------
     print('Building environmental variables..')
+
     # The environmental vars will later be automatically set by the workflow that triggers the docker container
     # data_dirs (for inference)
     os.environ["WORKFLOW_DIR"] = os.path.join(JIP_dir, 'data_dirs')
@@ -120,16 +126,28 @@ if __name__ == "__main__":
     os.environ["OPERATOR_PERSISTENT_DIR"] = os.path.join(JIP_dir, 'data_dirs', 'persistent') # pre-trained models
 
     # preprocessed_dirs (for preprocessed data (output of this workflow = input for main workflow)
-    os.environ["PREPROCESSED_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'preprocessed_dirs')
+    os.environ["PREPROCESSED_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'data_dirs', 'temp', 'preprocessed_dirs') 
     os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_DIR"] = "output_train"
     os.environ["PREPROCESSED_OPERATOR_OUT_TEST_DIR"] = "output_test"
     os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"] = "output_data"
+    os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_WITHOUT_FFT_DIR"] = "output_train_without_fft"
+    os.environ["PREPROCESSED_OPERATOR_OUT_TEST_WITHOUT_FFT_DIR"] = "output_test_without_fft"
+    os.environ["PREPROCESSED_OPERATOR_OUT_DATA_WITHOUT_FFT_DIR"] = "output_data_without_fft"
 
     # train_dirs (for training data)
-    os.environ["TRAIN_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'train_dirs')
+    os.environ["TRAIN_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'data_dirs', 'temp', 'train_dirs') 
 
     # test_dirs (for test data)
-    os.environ["TEST_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'test_dirs')
+    os.environ["TEST_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'data_dirs', 'temp', 'test_dirs') 
+
+    # segmentation_dirs (for segmentation data)
+    os.environ["SEGMENTATION_WORKFLOW_DIR"] = os.path.join(JIP_dir, 'data_dirs', 'temp', 'segmemtation_dirs') 
+    os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR"] = 'data'
+    os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR_IMG"] = 'imgs'
+    os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR_SEG"] = 'masks'
+    os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_OUTPUT_DIR"] = 'output'
+
+
 
     # Make directories to avoid any errors
     paths = [os.path.join(os.environ["WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]),
@@ -139,10 +157,17 @@ if __name__ == "__main__":
              os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_DIR"]),
              os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_DIR"]),
              os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"]),
+             os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_WITHOUT_FFT_DIR"]),
+             os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_WITHOUT_FFT_DIR"]),
+             os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_WITHOUT_FFT_DIR"]),
              os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]),
              os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"]),
              os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]),
-             os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"])]
+             os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"]),
+             os.path.join(os.environ["SEGMENTATION_WORKFLOW_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR"]),
+             os.path.join(os.environ["SEGMENTATION_WORKFLOW_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR_IMG"]),
+             os.path.join(os.environ["SEGMENTATION_WORKFLOW_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_DIR_SEG"]),
+             os.path.join(os.environ["SEGMENTATION_WORKFLOW_DIR"], os.environ["SEGMENTATION_OPETRATOR_OUT_SEG_OUTPUT_DIR"])]
     for path in paths:
         if not os.path.exists(path):
             os.makedirs(path)
@@ -151,14 +176,10 @@ if __name__ == "__main__":
     # ------------------------
     # Build config dictionary
     # ------------------------
-    # NOTE: Decathlon Dataset will be nr_images x 5 scans big.
-    #       Grand Challenge Dataset will be nr_images x 5 scans big (or less if less scans are available).
-    #       UK Frankfurt Dataset will be nr_images x 5 scans big (or less if less scans are available).
-    #       Mixed Dataset will be nr_images x 15 scans big (or less if less scans are available).
     # NOTE: num_intensities embodies the number of quality values 1 to 5, where 1 is a bad quality
     #       and 5 is a the best quality. This will be transformed into values between 0 and 1 in
     #       the inference step, whereas 0s is bad quality and 1 is the best quality.
-    # NOTE: train_on indicates on which dataset to train: {'Decathlon', 'GC', 'mixed'}.
+    # NOTE: train_on indicates on which dataset to train.
     #       For institutes that use this method to retrain a pre-trained model with their own dataset can write
     #       every name they want, since the whole data from preprocessed_dirs/output_train
     #       will be loaded and used. Thus, this variable will not be considered in this process.
@@ -167,11 +188,11 @@ if __name__ == "__main__":
     # NOTE: For learning rate decay, set the variables 'lr_decay', 'decay_type' and 'decay_rate'. decay_type can be 
     #       {'exp_decay', 'step_decay', 'mstep_decay', 'plat_decay'}, whereas decay_rate represents gamma in all of these decays except
     #       plat_decay. --> lr will normally always updated with lr = lr * decay_rate, so consider this when setting decay_rate.
-    config = {'device': cuda, 'input_shape': (1, 60, 299, 299), 'augmentation': True, 'mode': mode,
-              'data_type': data_type, 'lr': 1e-3, 'batch_size': 64, 'num_intensities': 5, 'nr_epochs': 250, 'decay_type': 'plat_decay',
+    config = {'device': cuda, 'input_shape': (1, 60, 299, 299), 'augmentation': False, 'mode': mode,
+              'data_type': data_type, 'lr': 1e-5, 'batch_size': 4, 'num_intensities': 5, 'nr_epochs': 30, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
-              'bot_msg_interval': 10, 'nr_images': 25, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
-              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data}
+              'bot_msg_interval': 10, 'nr_images': 170, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
+              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'Task'}
 
     # -------------------------
     # Preprocess
@@ -333,3 +354,13 @@ if __name__ == "__main__":
             print('Inference could not be performed. The following error occured: {}.'.format(error))
             if msg_bot:
                 bot.send_msg('Inference could not be performed. The following error occured: {}.'.format(error))
+
+    # -------------------------
+    # Segmentation
+    # -------------------------
+    
+    # Trains model for segmentation
+    if mode == 'segmentation':
+        if msg_bot:
+            bot.send_msg('Start the segmentation..')
+        train(n_classes=2, epochs=50, batch_size=1, device = config['device'])

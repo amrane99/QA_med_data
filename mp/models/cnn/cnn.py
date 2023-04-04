@@ -3,11 +3,15 @@
 # ------------------------------------------------------------------------------
 
 import torch.nn as nn
+import torch.nn.functional as F
 from mp.models.model import Model
+import torch
+from collections import OrderedDict
+
 
 class CNN_Net3D(Model):   
     r"""This class represents a CNN for 3D image classification,
-    detecting CT artefacts in CT slices."""
+    detecting MRI artefacts in MRI slices."""
     def __init__(self, num_labels):
         super(CNN_Net3D, self).__init__()
         self.cnn_layers = nn.Sequential(
@@ -30,18 +34,19 @@ class CNN_Net3D(Model):
 
         self.linear_layers = nn.Sequential(
             # Output shape of cnn_layers
-            nn.Linear(8 * 5 * 5 * 3, 128), 
+            nn.Linear(8 * 1 * 2 * 1, 1024), 
             nn.ReLU(inplace=True),
-            nn.BatchNorm1d(128),
+            nn.BatchNorm1d(1024),
             nn.Dropout(p=0.50),
-            nn.Linear(128, num_labels)
-        )
+            nn.Linear(1024, num_labels)
+        ) #NBTN nn.Linear(8*5*5*3,128) --> nn.Linear(8*1*2*1, 8) 
+          #NBTN BatchNorm1d(128) --> BatchNorm(8)
+          #NBTN nn.Linear(128, num_labels) --> nn.Linear(8, num_labels)
 
     # Defining the forward pass    
     def forward(self, x):
         yhat = self.cnn_layers(x)
-        #print(yhat.size())
         yhat = yhat.view(yhat.size(0), -1)
-        #yhat = x.view(x.size(0), -1)
         yhat = self.linear_layers(yhat)
         return yhat
+

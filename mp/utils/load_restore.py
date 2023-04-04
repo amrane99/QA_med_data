@@ -9,7 +9,11 @@ import json
 import functools
 import torch
 import SimpleITK as sitk
-import mp.models.cnn.cnn as models
+#import mp.models.cnn.cnn as models
+#import mp.models.cnn.mobilenet_v2 as models
+from mp.models.cnn.mobilenet_v2 import MobileNetV2
+from mp.models.cnn.densenet import Densenet121
+from mp.utils.Unet.UNet import UNet
 
 # PICKLE
 def pkl_dump(obj, name, path='obj'):
@@ -92,14 +96,25 @@ def join_path(list):
     r"""From a list of chained directories, forms a path"""
     return functools.reduce(os.path.join, list)
 
-def load_model(model_name, output_features, path, weights):
+def load_model(model_name, path, weights):
     r"""This function creates a model and based on path and weights, it loads the
         corresponding state_dict and returns the model."""
-    model = getattr(models, model_name)(output_features)    # Same as models.model_name(output_features)
-    # If weights, than load the state dict from path
+    # model for all artefacts despite spike
+    if model_name == 'MobileNetV2':
+        model = MobileNetV2()
+    #model for spike
+    elif model_name == 'Densenet121':
+        model = Densenet121()
+    #model for segmentation
+    elif model_name == 'UNet':
+        model = UNet(n_channels=1, n_classes=2)
+    else:
+        print('Modelname is not found. Only MobileNetV2, Densenet121 or UNet possible')
+        
     if weights:
-        state_dict = torch.load(path)
-        model.load_state_dict(state_dict)
+        state_dict = torch.load(path, map_location=torch.device('cpu')) #NEW map_location=torch.device('cpu') hinzugefügt
+        model.load_state_dict(state_dict=state_dict)
+        
         model.eval()
     # Return the model
     return model

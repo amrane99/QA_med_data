@@ -127,7 +127,7 @@ torch == 1.6.0
 torchio == 0.17.46
 
 # QA_med_data/mp/models/model.py: 8
-torchsummary == 1.2.0
+# torchsummary == 1.2.0
 
 # QA_med_data/mp/data/pytorch/transformation.py: 9
 torchvision == 0.7.0

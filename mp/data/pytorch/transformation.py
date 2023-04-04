@@ -114,11 +114,11 @@ def centre_crop_pad_2d(img, size=(1, 128, 128)):
     img = torch.squeeze(img, -1)
     return img
 
-def centre_crop_pad_3d(img, size=(1, 56, 56, 56)):
+def centre_crop_pad_3d(img, size=(1, 60, 299, 299), padding_mode=0):
     r"""Center-crops to the specified size, unless the image is to small in some
     dimension, then padding takes place. For 3D data.
     """
-    transform = torchio.transforms.CropOrPad(target_shape=size[1:], padding_mode=0)
+    transform = torchio.transforms.CropOrPad(target_shape=size[1:], padding_mode=padding_mode)
     device = img.device
     img = transform(img.cpu()).to(device)
     return img
@@ -126,14 +126,27 @@ def centre_crop_pad_3d(img, size=(1, 56, 56, 56)):
 def pad_3d_if_required(instance, size):
     r"""Pads if required in the last dimension, for 3D.
     """
+    '''print('instance')
+    print(instance)
+    print(instance.shape)
+    print(instance.shape[-1])
+    print('size')
+    print(size)
+    print(size[-1])
     if instance.shape[-1] < size[-1]:
         delta = size[-1]-instance.shape[-1]
         subject = instance.get_subject()
         transform = torchio.transforms.Pad(padding=(0, 0, 0, 0, 0, delta), padding_mode=0)
         subject = transform(subject)
         instance.x = torchio.Image(tensor=subject.x.tensor, type=torchio.INTENSITY)
-        instance.y = torchio.Image(tensor=subject.y.tensor, type=torchio.LABEL)
-        instance.shape = subject.shape
+        print('instance nach transform')
+        print(instance)
+        print(instance.shape)
+        print(instance.shape[-1])
+        print('subject.y')
+        print(subject.y)
+        instance.y = torchio.Image(tensor=subject.y, type=torchio.LABEL) 
+        instance.shape = subject.shape'''
     return instance
 
 
