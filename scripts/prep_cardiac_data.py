@@ -277,7 +277,7 @@ def adac_split_4d(in_dir_path, out_dir_path, copy_all=False):
                 image = sitk.ReadImage(file_path)
                 numb_frames = image.GetSize()[3]
 
-                if patient_nr < 100:
+                if patient_nr <= 100:
                     dest_dir_name = "images_Tr"
                 else:
                     dest_dir_name = "images_Ts"
@@ -305,11 +305,11 @@ def adac_split_4d(in_dir_path, out_dir_path, copy_all=False):
                     frame_digits = file_name_split[1][5:]
                     patient_nr = int(patient_digits)
                     
-                    if ('gt' in file_name) & (patient_nr < 100):
+                    if ('gt' in file_name) & (patient_nr <= 100):
                         dest_dir_name = "opt_labels_Tr"
                     elif ('gt' in file_name) & (patient_nr > 100):
                         dest_dir_name = "opt_labels_Ts"
-                    elif ('frame' in file_name) & (patient_nr < 100):
+                    elif ('frame' in file_name) & (patient_nr <= 100):
                         dest_dir_name = "opt_frames_Tr"
                     elif ('frame' in file_name) & (patient_nr > 100):
                         dest_dir_name = "opt_frames_Ts"
