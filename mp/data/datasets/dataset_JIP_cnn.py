@@ -41,16 +41,25 @@ class JIPDataset(CNNDataset):
         self.inference_name = inference_name # Name of inference instance
         self.fft_for_inference = fft_for_inference # Indicates if fft is used
         self.data_path = os.path.join(os.environ["WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Inference Data
+        print("self.data_path:", self.data_path)
         self.data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
+        print("self.data_dataset_path:", self.data_dataset_path)
         self.data_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_WITHOUT_FFT_DIR"])
+        print("self.data_without_fft_path:", self.data_without_fft_path)
         self.train_path = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Train Data
+        print("self.train_path:", self.train_path)
         self.train_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_DIR"])
+        print("self.train_dataset_path:", self.train_dataset_path)
         self.train_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_WITHOUT_FFT_DIR"])
+        print("self.train_without_fft_path:", self.train_without_fft_path)
         self.test_path = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Test Data
+        print("self.test_path:", self.test_path)
         self.test_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_DIR"])
+        print("self.test_dataset_path:", self.test_dataset_path)
         self.test_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_WITHOUT_FFT_DIR"])
+        print("self.test_without_fft_path:", self.test_without_fft_path)
         self.segmentation_path = os.environ["SEGMENTATION_WORKFLOW_DIR"] # Segmentation data
-
+        print("self.segmentation_path:", self.segmentation_path)
 
         if build_dataset:
             instances = self.buildDataset(dtype, noise, seed)
@@ -66,65 +75,70 @@ class JIPDataset(CNNDataset):
                 augmentation_inference(self.data_path, self.data_dataset_path)
                 
             if self.data_type == 'train':
+                image_size = (1, 120, 256, 256)
                 if not self.restore:
                     delete_images_and_labels(self.train_dataset_path)
                     delete_images_and_labels(self.train_without_fft_path)
-                    augment_data_aug_blur(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_noise(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
+                    augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 else:
-                    augment_data_aug_blur(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_noise(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, True)
+                    augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, self.train_without_fft_path, True)
                 
             if self.data_type == 'test':
+                image_size = (1, 120, 256, 256)
                 delete_images_and_labels(self.test_dataset_path)
                 delete_images_and_labels(self.test_without_fft_path)
-                augment_data_aug_blur(self.test_path, self.test_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_noise(self.test_path, self.test_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_motion(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_ghosting(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_spike(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
-                generate_train_labels(self.num_intensities, self.test_path, self.test_dataset_path)
+                augment_data_aug_blur(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_noise(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_motion(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_ghosting(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_spike(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                #potential error! (should be: generate_test_labels(...))
+                generate_train_labels(self.num_intensities, self.test_path, self.test_dataset_path, self.test_without_fft_path)
 
             if self.data_type == 'all':
+                image_size = (1, 120, 256, 256)
                 delete_images_and_labels(self.data_dataset_path)
                 delete_images_and_labels(self.data_without_fft_path)
                 
                 if not self.restore:
                     delete_images_and_labels(self.train_dataset_path)
                     delete_images_and_labels(self.train_without_fft_path)
-                    augment_data_aug_blur(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_noise(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
+                    augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 else:
-                    augment_data_aug_blur(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_noise(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, True)
+                    augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                    augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, self.train_without_fft_path, True)
 
                 delete_images_and_labels(self.test_dataset_path)
                 delete_images_and_labels(self.test_without_fft_path)
-                augment_data_aug_blur(self.test_path, self.test_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_noise(self.test_path, self.test_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_motion(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_ghosting(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_spike(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=(1, 35, 51, 35))
+                augment_data_aug_blur(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_noise(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_motion(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_ghosting(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
+                augment_data_aug_spike(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
                 generate_test_labels(self.num_intensities, self.test_path, self.test_dataset_path)
 
             if self.data_type == 'segmentation':
+                image_size = (1, 120, 256, 256)
                 delete_images_and_labels(self.segmentation_path)
-                augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'img', img_size=(1,35,51,35))
-                augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'seg', img_size=(1,35,51,35))
+                augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'img', img_size=image_size)
+                augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'seg', img_size=image_size)
 
 
             return True, None
@@ -151,11 +165,12 @@ class JIPDataset(CNNDataset):
                 self.data_type = dtype
                 self.preprocess()
             if not self.data_augmented:
-                augment_data_aug_blur(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_noise(self.train_path, self.train_dataset_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
-                augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=(1, 35, 51, 35))
+                image_size = (1, 120, 256, 256)
+                augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                augment_data_aug_ghosting(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
+                augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
 
         elif 'test' in dtype:
             if not os.path.isdir(self.test_dataset_path) or not os.listdir(self.test_dataset_path):
@@ -287,7 +302,9 @@ def _get_equally_distributed_names(study_names, labels, ds_name, noise, nr_image
         labels_key = str(i/num_intensities) + '_' + noise
         possible_values = labels[labels_key]
         # Select only files from the current dataset with the current intensity level and where the name matches its label
-        intensity_names = [x for x in possible_values if ds_name in x and x in study_names]
+        #intensity_names = [x for x in possible_values if ds_name in x and x in study_names]
+        intensity_names = [x for x in possible_values if x in study_names]
+        
         # Select random names
         if len(intensity_names) > nr_images:
             ds_names.extend(random.sample(intensity_names, nr_images))

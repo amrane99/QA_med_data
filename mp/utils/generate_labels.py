@@ -1,14 +1,14 @@
 import os
 import json
 
-def generate_train_labels(num_intensities, source_path, target_path, swap_labels=True, ds_name = "Task"): #NBTN swap_label False--> true
+def generate_train_labels(num_intensities, source_path, target_path, without_fft_path, swap_labels=True, ds_name = "Task"): #NBTN swap_label False--> true
     r"""This function generates the labels.json file that is necessary for training."""
     # Foldernames are patient_id
     print('genetrate_train_label')
 
-    filenames = [x for x in os.listdir(source_path) if '._' not in x and ds_name in x\
-                 and not 'blur' in x and not 'resolution' in x and not 'ghosting' in x and not 'motion' in x\
-                 and not 'noise' in x and not 'spike' in x] 
+    filenames = [x for x in os.listdir(source_path) if '._' not in x] #and ds_name in x\
+                 #and not 'blur' in x and not 'resolution' in x and not 'ghosting' in x and not 'motion' in x\
+                 #and not 'noise' in x and not 'spike' in x] 
 
     # Generate labels  with augmentation
     labels = dict()
@@ -19,11 +19,11 @@ def generate_train_labels(num_intensities, source_path, target_path, swap_labels
         labels[str(name) + '_blur3'] = 3/num_intensities
         labels[str(name) + '_blur2'] = 2/num_intensities
         labels[str(name) + '_blur1'] = 1/num_intensities
-        labels[str(name) + '_resolution5'] = 5/num_intensities
-        labels[str(name) + '_resolution4'] = 4/num_intensities
-        labels[str(name) + '_resolution3'] = 3/num_intensities
-        labels[str(name) + '_resolution2'] = 2/num_intensities
-        labels[str(name) + '_resolution1'] = 1/num_intensities
+        #labels[str(name) + '_resolution5'] = 5/num_intensities
+        #labels[str(name) + '_resolution4'] = 4/num_intensities
+        #labels[str(name) + '_resolution3'] = 3/num_intensities
+        #labels[str(name) + '_resolution2'] = 2/num_intensities
+        #labels[str(name) + '_resolution1'] = 1/num_intensities
         labels[str(name) + '_ghosting5'] = 5/num_intensities
         labels[str(name) + '_ghosting4'] = 4/num_intensities
         labels[str(name) + '_ghosting3'] = 3/num_intensities
@@ -51,6 +51,10 @@ def generate_train_labels(num_intensities, source_path, target_path, swap_labels
     if not os.path.isdir(target_path):
         os.makedirs(target_path)
     with open(os.path.join(target_path, 'labels.json'), 'w') as fp:
+        json.dump(labels, fp, sort_keys=True, indent=4)
+    if not os.path.isdir(without_fft_path):
+        os.makedirs(without_fft_path)
+    with open(os.path.join(without_fft_path, 'labels.json'), 'w') as fp:
         json.dump(labels, fp, sort_keys=True, indent=4)
 
 
@@ -91,6 +95,8 @@ def generate_train_labels(num_intensities, source_path, target_path, swap_labels
         # Save labels
         print("Saving swapped labels..")
         with open(os.path.join(target_path, 'labels_swapped.json'), 'w') as fp:
+            json.dump(labels_swapped, fp, sort_keys=True, indent=4)
+        with open(os.path.join(without_fft_path, 'labels_swapped.json'), 'w') as fp:
             json.dump(labels_swapped, fp, sort_keys=True, indent=4)
 
 

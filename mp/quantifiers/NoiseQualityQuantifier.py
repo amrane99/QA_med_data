@@ -47,8 +47,8 @@ class NoiseQualityQuantifier(ImgQualityQuantifier):
         """
 
         # Check if the hippocampus is fully captured
-        fully_captured = hippocampus_fully_captured(source_path = file, device=device)
-        
+        #fully_captured = hippocampus_fully_captured(source_path = file, device=device)
+        fully_captured = False
         
         # Predict the label for the given Image
         model = self.model

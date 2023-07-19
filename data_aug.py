@@ -24,24 +24,24 @@ def augment_image_in_four_intensities(image, noise, mean_val):
     # Define augmentation methods
     if noise == 'blur':
         blur2 = random_blur(std=0.4)
-        blur3 = random_blur(std=0.75)
-        blur4 = random_blur(std=1)
-        blur5 = random_blur(std=1.75)
+        blur3 = random_blur(std=0.8)
+        blur4 = random_blur(std=1.2)
+        blur5 = random_blur(std=1.6)
         return blur2(image), blur3(image), blur4(image), blur5(image)
 
 
     if noise == 'ghosting':
-        ghosting2 = random_ghosting(num_ghosts = (1,1), intensity=(0.55,0.55))
-        ghosting3 = random_ghosting(num_ghosts = (2,2), intensity=(0.62,0.62))
-        ghosting4 = random_ghosting(num_ghosts = (3,3), intensity=(0.71,0.71))
-        ghosting5 = random_ghosting(num_ghosts = (4,4), intensity=(0.8,0.8))
+        ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(1.0,1.0))
+        ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(1.0,1.0))
+        ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(1.0,1.0))
+        ghosting5 = random_ghosting(num_ghosts = (2,2), intensity=(1.0,1.0))
         return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
 
     if noise == 'motion':
-        motion2 = random_motion(degrees=(2,2), translation=(1,1), num_transforms=1)
-        motion3 = random_motion(degrees=(2.5,2.5), translation=(1.2,1.2), num_transforms=2)
-        motion4 = random_motion(degrees=(3,3), translation=(1.4,1.4), num_transforms=3)
-        motion5 = random_motion(degrees=(4,4), translation=(1.6,1.6), num_transforms=3)
+        motion2 = random_motion(degrees=(2,2), translation=(2,2), num_transforms=4)
+        motion3 = random_motion(degrees=(4,4), translation=(4,4), num_transforms=4)
+        motion4 = random_motion(degrees=(6,6), translation=(6,6), num_transforms=4)
+        motion5 = random_motion(degrees=(8,8), translation=(8,8), num_transforms=4)
         return motion2(image), motion3(image), motion4(image), motion5(image)
 
     # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
@@ -49,17 +49,17 @@ def augment_image_in_four_intensities(image, noise, mean_val):
     # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
     # impressions of the intensity of the noiseon different images. 
     if noise == 'noise':
-        noise2 = random_noise(mean=mean_val,std=0.02*mean_val)
-        noise3 = random_noise(mean=mean_val,std=0.04*mean_val)
-        noise4 = random_noise(mean=mean_val,std=0.06*mean_val)
-        noise5 = random_noise(mean=mean_val,std=0.08*mean_val)
+        noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
+        noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
+        noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
+        noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
         return noise2(image), noise3(image), noise4(image), noise5(image)
 
     if noise == 'spike':
-        spike2 = random_spike(num_spikes=(2,2), intensity=(0.028, 0.028))
-        spike3 = random_spike(num_spikes=(3,3), intensity=(0.042, 0.042))
-        spike4 = random_spike(num_spikes=(4,4), intensity=(0.055, 0.055))
-        spike5 = random_spike(num_spikes=(5,5), intensity=(0.07, 0.07))
+        spike2 = random_spike(num_spikes=(2,2), intensity=(0.28, 0.28))
+        spike3 = random_spike(num_spikes=(2,2), intensity=(0.42, 0.42))
+        spike4 = random_spike(num_spikes=(3,3), intensity=(0.56, 0.56))
+        spike5 = random_spike(num_spikes=(3,3), intensity=(0.75, 0.75))
         return spike2(image), spike3(image), spike4(image), spike5(image)
 
 
@@ -169,6 +169,13 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
     for num, filename in enumerate(filenames):
         print('motion: ' + str(num+1) +'/' + str(len(filenames)))
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))
+        
+        # Edit to keep the z-dimension (number of slices) of the actual image
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
+
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
         mean_val = np.mean(img_array)
@@ -235,11 +242,15 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_blur(source_path, target_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
     r"""This function augments Data for the artefact blur. 
     """
     
     torch.manual_seed(42)
+    # Indicates if the difference between the fft of the image without artefact and the fft of the image with artifact 
+    # is calculated and saved. This can be used to demonstate the differences between the ffts of different artifacts or intensities
+    diff = False
+
     #Extract filenames
     filenames = [x for x in os.listdir(source_path)]
 
@@ -247,24 +258,70 @@ def augment_data_aug_blur(source_path, target_path, img_size=(1, 35, 51, 35)):
     for num, filename in enumerate(filenames):
         print('blur: ' + str(num+1) +'/' + str(len(filenames)))
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
+        
+        # Edit to keep the z-dimension (number of slices) of the actual image
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
+
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
         mean_val = np.mean(img_array)
 
+        # Centercrop and pad the image without artifact
+        if diff:
+            img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
+            diff_img = []
+
         # Augment image
         blur2, blur3, blur4, blur5 = augment_image_in_four_intensities(img, 'blur', mean_val)
         blur = [img, blur2, blur3, blur4, blur5]
+        blur_without_fft = []
+
         for bl in range(len(blur)):
             x_s = torch.from_numpy(sitk.GetArrayFromImage(blur[bl])).unsqueeze_(0)
             # Centercrop and pad all images to the same size
             blur[bl] = centre_crop_pad_3d(x_s, img_size)[0]
+            blur_without_fft.append(blur[bl])
+
+            # Calculate the difference of the ffts. 
+            if diff:
+                img_basic = np.fft.fftn(img_array_crop)
+                fft_shift_basic = np.fft.fftshift(img_basic)
+                fft_trans_abs_basic = np.abs(fft_shift_basic)
+                fft_trans = np.fft.fftn(blur[bl])
+                fft_shift = np.fft.fftshift(fft_trans)
+                fft_trans_abs = np.abs(fft_shift)
+
+                fftdiff = np.subtract(np.array(fft_trans_abs_basic), np.array(fft_trans_abs))
+                fft_trans_log = np.log(fftdiff)
+                diff_img.append(fft_trans_log)
+
+            # Transform the augmented image to fft
+            fft_trans = np.fft.fftn(blur[bl])
+            fft_trans_abs = np.abs(fft_trans)
+            blur[bl] = fft_trans_abs
 
         # Save images
         for ind, i in enumerate(range(5, 0, -1)):
             a_filename = filename.split('.')[0] + '_' + 'blur' + str(i)
+            
+            # Save fft images
             os.makedirs(os.path.join(target_path, a_filename, 'img'))
             x = sitk.GetImageFromArray(blur[ind])
             sitk.WriteImage(x, os.path.join(target_path, a_filename, 'img', 'img.nii.gz'))
+
+            # Save imaged without fft
+            os.makedirs(os.path.join(without_fft_path, a_filename, 'img'))
+            x_not_fft = sitk.GetImageFromArray(blur_without_fft[ind])
+            sitk.WriteImage(x_not_fft, os.path.join(without_fft_path, a_filename, 'img', 'img.nii.gz'))
+            
+            # Save the differences
+            if diff:
+                os.makedirs(os.path.join(target_path, 'diff_images'))
+                x = sitk.GetImageFromArray(diff_img[ind])
+                sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
 def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
@@ -277,12 +334,21 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
     # Indicates if the difference between the fft of the image without artefact and the fft of the image with artifact 
     # is calculated and saved. This can be used to demonstate the differences between the ffts of different artifacts or intensities
     diff = False
+
     #Extract filenames
     filenames = [x for x in os.listdir(source_path)]
+
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('ghosting: ' + str(num+1) +'/' + str(len(filenames)))
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
+        
+        # Edit to keep the z-dimension (number of slices) of the actual image
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
+
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
         mean_val = np.mean(img_array)
@@ -294,13 +360,14 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
 
         # Augment image
         ghosting2, ghosting3, ghosting4, ghosting5 = augment_image_in_four_intensities(img, 'ghosting', mean_val)
+        
         ghosting = [img, ghosting2, ghosting3, ghosting4, ghosting5]
         ghosting_without_fft = []
+
         for gho in range(len(ghosting)):
             x_s = torch.from_numpy(sitk.GetArrayFromImage(ghosting[gho])).unsqueeze_(0)
             # Centercrop and pad all images to the same size
             ghosting[gho] = centre_crop_pad_3d(x_s, img_size)[0]
-
             ghosting_without_fft.append(ghosting[gho])
 
             # Calculate the difference of the ffts. 
@@ -342,35 +409,86 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_noise(source_path, target_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
     r"""This function augments Data for the artefact noise. 
     """
     
     torch.manual_seed(42)
+    # Indicates if the difference between the fft of the image without artefact and the fft of the image with artifact 
+    # is calculated and saved. This can be used to demonstate the differences between the ffts of different artifacts or intensities
+    diff = False
+
     #Extract filenames
     filenames = [x for x in os.listdir(source_path)]
+
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('noise: ' + str(num+1) +'/' + str(len(filenames)))
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
+        
+        # Edit to keep the z-dimension (number of slices) of the actual image
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
+
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
         mean_val = np.mean(img_array)
 
+        # Centercrop and pad the image without artifact
+        if diff:
+            img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
+            diff_img = []
+
         # Augment image
         noise2, noise3, noise4, noise5 = augment_image_in_four_intensities(img, 'noise', mean_val)
         noise = [img, noise2, noise3, noise4, noise5]
+        noise_without_fft = []
+
         for no in range(len(noise)):
             x_s = torch.from_numpy(sitk.GetArrayFromImage(noise[no])).unsqueeze_(0)
             # Centercrop and pad all images to the same size
             noise[no] = centre_crop_pad_3d(x_s, img_size)[0]
+            noise_without_fft.append(noise[no])
+
+            # Calculate the difference of the ffts. 
+            if diff:
+                img_basic = np.fft.fftn(img_array_crop)
+                fft_shift_basic = np.fft.fftshift(img_basic)
+                fft_trans_abs_basic = np.abs(fft_shift_basic)
+                fft_trans = np.fft.fftn(noise[no])
+                fft_shift = np.fft.fftshift(fft_trans)
+                fft_trans_abs = np.abs(fft_shift)
+
+                fftdiff = np.subtract(np.array(fft_trans_abs_basic), np.array(fft_trans_abs))
+                fft_trans_log = np.log(fftdiff)
+                diff_img.append(fft_trans_log)
+
+            # Transform the augmented image to fft
+            fft_trans = np.fft.fftn(noise[no])
+            fft_trans_abs = np.abs(fft_trans)
+            noise[no] = fft_trans_abs
 
         # Save images
         for ind, i in enumerate(range(5, 0, -1)):
             a_filename = filename.split('.')[0] + '_' + 'noise' + str(i)
+            
+            # Save fft images
             os.makedirs(os.path.join(target_path, a_filename, 'img'))
             x = sitk.GetImageFromArray(noise[ind])
             sitk.WriteImage(x, os.path.join(target_path, a_filename, 'img', 'img.nii.gz'))
+
+            # Save imaged without fft
+            os.makedirs(os.path.join(without_fft_path, a_filename, 'img'))
+            x_not_fft = sitk.GetImageFromArray(noise_without_fft[ind])
+            sitk.WriteImage(x_not_fft, os.path.join(without_fft_path, a_filename, 'img', 'img.nii.gz'))
+
+            # Save the differences
+            if diff:
+                os.makedirs(os.path.join(target_path, 'diff_images'))
+                x = sitk.GetImageFromArray(diff_img[ind])
+                sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
 def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
@@ -392,6 +510,13 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
         
 
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
+        
+        # Edit to keep the z-dimension (number of slices) of the actual image
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
+
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
         mean_val = np.mean(img_array)

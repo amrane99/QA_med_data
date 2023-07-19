@@ -78,7 +78,8 @@ class NetAgent(Agent):
                 if store_data:
                     results_y.extend(y.cpu().detach().numpy().tolist())
                     results_yhat.extend(yhat.cpu().detach().numpy().tolist())
-                optimizer.zero_grad(set_to_none=True) #NBTN set_to_none =False --> True
+                #optimizer.zero_grad(set_to_none=True) #NBTN set_to_none =False --> True
+                optimizer.zero_grad(True) #NBTN set_to_none =False --> True
                 loss.backward()
                 optimizer.step()
             losses_cum.append([epoch+1, sum(epoch_loss) / total])
