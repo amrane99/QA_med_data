@@ -517,6 +517,40 @@ def fuse_dcm_to_nii(input_dir, output_dir):
 
 
 
+def convert_folder_structure(in_dir_path):
+    r"""
+        - in_dir_path:      Directory path that specifies the entry point of application.
+
+        This method can be used to prepare the ADAC data for augmentation. 
+        It adjusts the directory structure to fit the JIP-format.
+        It performs a conversion of a given directory the following way:
+        Before:
+            .../input
+                    .../001_01.nii.gz
+                    .../991_02.nii.gz
+                    ...
+        After:
+            .../input
+                    .../patient_001_01/img/img.nii.gz
+                    .../patient_001_02/img/img.nii.gz
+                    ...
+    """
+    # Get a list of all files in the original directory
+    file_list = os.listdir(in_dir_path)
+
+    for file_name in file_list:
+        if file_name.endswith('.nii.gz'):
+            # Extract the desired folder name
+            folder_name = "patient_" + file_name[:-7]
+
+            # Create the new folder structure
+            new_folder_path = os.path.join(in_dir_path, folder_name, 'img')
+            os.makedirs(new_folder_path, exist_ok=True)
+
+            # Move and rename the file
+            original_file_path = os.path.join(in_dir_path, file_name)
+            new_file_path = os.path.join(new_folder_path, 'img.nii.gz')
+            shutil.move(original_file_path, new_file_path)
 
 
 def main():
