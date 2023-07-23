@@ -114,7 +114,7 @@ def centre_crop_pad_2d(img, size=(1, 128, 128)):
     img = torch.squeeze(img, -1)
     return img
 
-def centre_crop_pad_3d(img, size=(1, 35, 35, 51), padding_mode=0):
+def centre_crop_pad_3d(img, size=(1, 60, 256, 256), padding_mode=0): #original: size=(1, 35, 35, 51)
     r"""Center-crops to the specified size, unless the image is to small in some
     dimension, then padding takes place. For 3D data.
     """

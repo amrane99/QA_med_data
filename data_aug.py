@@ -171,10 +171,10 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))
         
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        #actual_size = img.GetSize()
+        #tmp = list(img_size)
+        #tmp[1] = actual_size[2]
+        #img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -260,10 +260,10 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
         
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        #actual_size = img.GetSize()
+        #tmp = list(img_size)
+        #tmp[1] = actual_size[2]
+        #img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -344,10 +344,10 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
         
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        #actual_size = img.GetSize()
+        #tmp = list(img_size)
+        #tmp[1] = actual_size[2]
+        #img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -427,10 +427,10 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
         
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        #actual_size = img.GetSize()
+        #tmp = list(img_size)
+        #tmp[1] = actual_size[2]
+        #img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -512,10 +512,10 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
         
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        #actual_size = img.GetSize()
+        #tmp = list(img_size)
+        #tmp[1] = actual_size[2]
+        #img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image

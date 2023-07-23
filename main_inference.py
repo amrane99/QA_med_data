@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     # -- Amins Part -- #
     # Config for artifact classifiers
-    config = {'device': cuda, 'input_shape': (1, 35, 51, 35), 'augmentation': True, 'mode': 'inference',
+    config = {'device': cuda, 'input_shape': (1, 60, 256, 256), 'augmentation': True, 'mode': 'inference',
               'data_type': 'inference', 'lr': 1e-3, 'batch_size': 128, 'num_intensities': 5, 'nr_epochs': 150, 'decay_type': 'plat_decay',
               'noise': 'blur', 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': False, 'lr_decay': True, 'decay_rate': 0.9,
               'bot_msg_interval': 10, 'nr_images': 25, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',

@@ -21,7 +21,7 @@ from data_aug import augmentation_segmentation, augmentation_inference
 class JIPDataset(CNNDataset):
     r"""Class for the dataset provided by the JIP tool/workflow.
     """
-    def __init__(self, subset=None, img_size=(1, 35, 51, 35), num_intensities=5, data_type='all', augmentation=True, data_augmented=False,
+    def __init__(self, subset=None, img_size=(1, 60, 256, 256), num_intensities=5, data_type='all', augmentation=True, data_augmented=False,
                  gpu=True, cuda=0, msg_bot=False, nr_images=20, build_dataset=False, dtype='train', noise='blur', ds_name='Task', seed=42,
                  restore=False, inference_name = None, fft_for_inference = False):
         r"""Constructor"""
@@ -75,7 +75,7 @@ class JIPDataset(CNNDataset):
                 augmentation_inference(self.data_path, self.data_dataset_path)
                 
             if self.data_type == 'train':
-                image_size = (1, 120, 256, 256)
+                image_size = (1, 60, 256, 256)
                 if not self.restore:
                     delete_images_and_labels(self.train_dataset_path)
                     delete_images_and_labels(self.train_without_fft_path)
@@ -93,7 +93,7 @@ class JIPDataset(CNNDataset):
                 generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, self.train_without_fft_path, True)
                 
             if self.data_type == 'test':
-                image_size = (1, 120, 256, 256)
+                image_size = (1, 60, 256, 256)
                 delete_images_and_labels(self.test_dataset_path)
                 delete_images_and_labels(self.test_without_fft_path)
                 augment_data_aug_blur(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
@@ -105,7 +105,7 @@ class JIPDataset(CNNDataset):
                 generate_train_labels(self.num_intensities, self.test_path, self.test_dataset_path, self.test_without_fft_path)
 
             if self.data_type == 'all':
-                image_size = (1, 120, 256, 256)
+                image_size = (1, 60, 256, 256)
                 delete_images_and_labels(self.data_dataset_path)
                 delete_images_and_labels(self.data_without_fft_path)
                 
@@ -135,7 +135,7 @@ class JIPDataset(CNNDataset):
                 generate_test_labels(self.num_intensities, self.test_path, self.test_dataset_path)
 
             if self.data_type == 'segmentation':
-                image_size = (1, 120, 256, 256)
+                image_size = (1, 60, 256, 256)
                 delete_images_and_labels(self.segmentation_path)
                 augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'img', img_size=image_size)
                 augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'seg', img_size=image_size)
@@ -165,7 +165,7 @@ class JIPDataset(CNNDataset):
                 self.data_type = dtype
                 self.preprocess()
             if not self.data_augmented:
-                image_size = (1, 120, 256, 256)
+                image_size = (1, 60, 256, 256)
                 augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)

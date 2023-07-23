@@ -118,7 +118,7 @@ class PytorchCNN3DDataset(PytorchCNNDataset):
     r"""Each 3D image is an item in the dataloader. If resize=True, the volumes
     are resized to the specified size, otherwise they are center-cropped and 
     padded if needed."""
-    def __init__(self, dataset, ix_lst=None, size=(1, 35,51,35), 
+    def __init__(self, dataset, ix_lst=None, size=(1, 60,256,256), 
         norm_key='rescaling', aug_key='standard', resize=False, samples_per_volume=None):
         if isinstance(size, int):
             size = (1, size, size, size)
@@ -154,7 +154,7 @@ class PytorchCNN3DDataset(PytorchCNNDataset):
 class Pytorch3DQueue(PytorchCNNDataset):
     r"""Divides images into patches. If there are subjects with less depth than 
     self.size[-1], these are padded."""
-    def __init__(self, dataset, ix_lst=None, size=(1, 35,51,35), sampler=None,
+    def __init__(self, dataset, ix_lst=None, size=(1, 60,256,256), sampler=None,
         max_length=300, samples_per_volume=10, norm_key='rescaling', 
         aug_key='standard'):
         r"""The number of patches is determined by samples_per_volume """

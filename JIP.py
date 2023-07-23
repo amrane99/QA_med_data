@@ -188,7 +188,7 @@ if __name__ == "__main__":
     # NOTE: For learning rate decay, set the variables 'lr_decay', 'decay_type' and 'decay_rate'. decay_type can be 
     #       {'exp_decay', 'step_decay', 'mstep_decay', 'plat_decay'}, whereas decay_rate represents gamma in all of these decays except
     #       plat_decay. --> lr will normally always updated with lr = lr * decay_rate, so consider this when setting decay_rate.
-    config = {'device': cuda, 'input_shape': (1, 35, 51, 35), 'augmentation': False, 'mode': mode,
+    config = {'device': cuda, 'input_shape':  (1, 60, 256, 256), 'augmentation': False, 'mode': mode,
               'data_type': data_type, 'lr': 1e-3, 'batch_size': 128, 'num_intensities': 5, 'nr_epochs': 150, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
               'bot_msg_interval': 10, 'nr_images': 530, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
