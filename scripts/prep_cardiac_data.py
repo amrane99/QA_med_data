@@ -32,10 +32,11 @@ def get_info(file_path):
 def analyze_sizes(in_dir_path, type='decathlon'):
     r'''
         Analyse the sizes of each .nii.gz image in a root directory.
-        Don't forget to set the type of the dataset (possible types: 'decathlon', 'adac')
+        Don't forget to set the type of the dataset which help to read the images: possible types: 'decathlon', 'adac', 'sunnybrook'
+        This method is intended to be applied on the original datasets - download links are in the README.md
     '''
     dim = 3
-    if type =='adac':
+    if (type =='adac' or type =='sunnybrook'):
         dim = 4
 
     # Array that stores all sizes of the images
@@ -48,7 +49,7 @@ def analyze_sizes(in_dir_path, type='decathlon'):
             # Skip irelevant files
             if file_name.startswith("."):
                 continue
-            if not file_name.endswith(".nii.gz"):
+            if not (file_name.endswith(".nii.gz") or file_name.endswith(".dcm")):
                 continue
             if type == 'adac':
                 if not "4d" in file_name:
@@ -319,21 +320,24 @@ def adac_split_4d(in_dir_path, out_dir_path, copy_all=False):
                     shutil.copy(file_path, out_file_path)
 
 
-def dcm_to_nii(input_dir, output_dir):
+def dcm_to_nii(in_dir_path, out_dir_path):
     r'''
-        Convert all .dcm files in the input directory to the output directory...
+        - in_dir_path:    Input directory path containing .dcm files to be converted.
+        - out_dir_path:   Output directory path for the corresponding .nii.gz converted files.
+        
+        This method converts all .dcm files in the input directory to .nii.gz files and saves them in the output directory.
     '''
     # Create the output directory if it doesn't exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(out_dir_path):
+        os.makedirs(out_dir_path)
 
     # Recursively search for DICOM files in the input directory
-    for root, dirs, files in os.walk(input_dir):
+    for root, dirs, files in os.walk(in_dir_path):
         for file in files:
             if file.lower().endswith('.dcm'):
                 # Get the relative path of the current DICOM file
-                relative_path = os.path.relpath(root, input_dir)
-                output_subdir = os.path.join(output_dir, relative_path)
+                relative_path = os.path.relpath(root, in_dir_path)
+                output_subdir = os.path.join(out_dir_path, relative_path)
                 # Create the corresponding subdirectory in the output directory
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
@@ -455,20 +459,25 @@ def reorient_all(in_dir_path, out_dir_path=None, orientation='RAI', prefix=None)
 
 
 
-def fuse_dcm_to_nii_with_sub_dir(input_dir, output_dir):
+def fuse_dcm_to_nii_with_sub_dir(in_dir_path, out_dir_path):
     r'''
-        # Todo: not finalized
+        - in_dir_path:    Input directory path containing the sub-folders with the images (.dcm) to be fused
+        - out_dir_path:   Output directory for the fused files (.nii.gz).    
+    
+        This method can be used if there are multiple folders with .dcm images where all images within each folder need to be fused into one file each.
+        It iterates through all sub-directories of the given in_dir_path and fuses all .dcm images via sitk.JoinSeries method.
+        The fused images of each sub-directory in the in_dir_path are stored as a copy in their corresponding sub-directory as a .nii.gz file.
     '''
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(out_dir_path):
+        os.makedirs(out_dir_path)
 
-    for root, dirs, files in os.walk(input_dir):
+    for root, dirs, files in os.walk(in_dir_path):
         images = []
 
         for file in files:
             if file.lower().endswith('.dcm'):
-                relative_path = os.path.relpath(root, input_dir)
-                output_subdir = os.path.join(output_dir, relative_path)
+                relative_path = os.path.relpath(root, in_dir_path)
+                output_subdir = os.path.join(out_dir_path, relative_path)
 
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
@@ -479,25 +488,30 @@ def fuse_dcm_to_nii_with_sub_dir(input_dir, output_dir):
 
         if images:
             fused_image = sitk.JoinSeries(images)
-            nii_file = os.path.join(output_subdir, "fused_image.nii.gz")
+            nii_file = os.path.join(output_subdir, "fused_image.nii.gz", )
             
             sitk.WriteImage(fused_image, nii_file)
             print(f"Fused images in {root} -> {nii_file}")
 
 
-def fuse_dcm_to_nii(input_dir, output_dir):
+def fuse_dcm_to_nii(in_dir_path, output_dir):
     r'''
-        # Todo: not finalized
+        - input_dir:    Input directory path for the images (.dcm) to be fused
+        - output_dir:   Output directory for the fused file (.nii.gz).    
+    
+        This method can be used if there are .dcm images that need to be fused into one .nii.gz file.
+        It fuses all .dcm images in the input_dir via sitk.JoinSeries method.
+        The fused image is stored as a .nii.gz file in the output_dir.
     '''
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    for root, dirs, files in os.walk(input_dir):
+    for root, dirs, files in os.walk(in_dir_path):
         images = []
 
         for file in files:
             if file.lower().endswith('.dcm'):
-                relative_path = os.path.relpath(root, input_dir)
+                relative_path = os.path.relpath(root, in_dir_path)
                 output_subdir = os.path.join(output_dir, relative_path)
 
                 if not os.path.exists(output_subdir):
@@ -516,18 +530,55 @@ def fuse_dcm_to_nii(input_dir, output_dir):
             print(f"Fused images in {root} -> {nii_file}")
 
 
+def sb_kaggle_fuse_dcm_to_nii(in_dir_path, out_dir_path):
+    r'''
+        - in_dir_path:    Input directory path containing the sub-folders with the images (.dcm) to be fused
+        - out_dir_path:   Output directory for the fused files (.nii.gz).    
+    
+        This method can be used if there are multiple folders with .dcm images where all images within each folder need to be fused into one file each.
+        It iterates through all sub-directories of the given in_dir_path and fuses all .dcm images via sitk.JoinSeries method to a .nii.gz file which is saved in the out_dir_path.
+        Note: This method ignores all "test.dcm" files in the fusion process.
+    '''
+    if not os.path.exists(out_dir_path):
+        os.makedirs(out_dir_path)
 
-def convert_folder_structure(in_dir_path):
+    for root, dirs, files in os.walk(in_dir_path):
+        images = []
+
+        for file in files:
+            if file == 'test.dcm':
+                continue
+            if file.lower().endswith('.dcm'):
+                relative_path = os.path.relpath(root, in_dir_path)
+                output_subdir = os.path.join(out_dir_path, relative_path)
+                
+                dcm_file = os.path.join(root, file)
+                image = sitk.ReadImage(dcm_file)
+                images.append(image)
+
+        if images:
+            fused_image = sitk.JoinSeries(images)
+            prefix = output_subdir.split('\\')[-1]
+            path = output_subdir.rsplit('\\', 1)[0]
+            nii_file = os.path.join(path, prefix + "_fused.nii.gz")
+            
+            sitk.WriteImage(fused_image, nii_file)
+            print(f"Fused images in {root} -> {nii_file}")
+
+
+
+def convert_folder_structure(in_dir_path, prefix="patient"):
     r"""
         - in_dir_path:      Directory path that specifies the entry point of application.
 
         This method can be used to prepare the ADAC data for augmentation. 
         It adjusts the directory structure to fit the JIP-format.
         It performs a conversion of a given directory the following way:
+        Example with prefix="patient"
         Before:
             .../input
                     .../001_01.nii.gz
-                    .../991_02.nii.gz
+                    .../001_02.nii.gz
                     ...
         After:
             .../input
@@ -541,7 +592,7 @@ def convert_folder_structure(in_dir_path):
     for file_name in file_list:
         if file_name.endswith('.nii.gz'):
             # Extract the desired folder name
-            folder_name = "patient_" + file_name[:-7]
+            folder_name = prefix + "_" + file_name[:-7]
 
             # Create the new folder structure
             new_folder_path = os.path.join(in_dir_path, folder_name, 'img')
@@ -553,10 +604,124 @@ def convert_folder_structure(in_dir_path):
             shutil.move(original_file_path, new_file_path)
 
 
+
+
+def convert_to_rai_orientation(in_dir_path, out_dir_path):
+
+    os.makedirs(out_dir_path, exist_ok=True)
+
+    # Get a list of all NIfTI files in the input directory
+    file_list = [file for file in os.listdir(in_dir_path) if file.endswith('.nii.gz')]
+
+    for file_name in file_list:
+        # Read the NIfTI image
+        input_file_path = os.path.join(in_dir_path, file_name)
+        image = sitk.ReadImage(input_file_path)
+        original_spacing = image.GetSpacing()
+        
+        # Reorient the image to RAI orientation
+        direction_matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        image.SetDirection(direction_matrix)
+
+        # Save the reoriented image to the output directory
+        output_file_path = os.path.join(out_dir_path, file_name)
+        sitk.WriteImage(image, output_file_path)
+
+        # Set the original spacings back to the reoriented image
+        reoriented_image = sitk.ReadImage(output_file_path)
+        reoriented_image.SetSpacing(original_spacing)
+        sitk.WriteImage(reoriented_image, output_file_path)
+
+
+
+def prepare_task_datasets(in_dir_path, out_dir_path, dataset_name="task"):
+    os.makedirs(out_dir_path, exist_ok=True)
+
+    # Get a list of all NIfTI files in the input directory
+    file_list = [file for file in os.listdir(in_dir_path) if file.endswith('.nii.gz')]
+
+    for file_name in file_list:
+        # Read the NIfTI image
+        input_file_path = os.path.join(in_dir_path, file_name)
+        image = sitk.ReadImage(input_file_path)
+        original_spacing = image.GetSpacing()
+        
+        # Reorient the image to RAI orientation
+        direction_matrix = [1, 0, 0, 0, 1, 0, 0, 0, 1]
+        image.SetDirection(direction_matrix)
+
+        # Save the reoriented image to the output directory
+        new_filename = file_name.split('_')[0]
+        output_file_path = os.path.join(out_dir_path, file_name)
+        sitk.WriteImage(image, output_file_path)
+
+        # Set the original spacings back to the reoriented image
+        reoriented_image = sitk.ReadImage(output_file_path)
+        reoriented_image.SetSpacing(original_spacing)
+        sitk.WriteImage(reoriented_image, output_file_path)
+
+
+
+
+def temp1(directory):
+    for filename in os.listdir(directory):
+        if filename.endswith('.nii.gz') and '_' in filename:
+            parts = filename.split('_')
+            new_filename = f"{parts[0]}.nii.gz"
+            os.rename(os.path.join(directory, filename), os.path.join(directory, new_filename))
+
+def temp2(input_directory, prefix="adac"):
+    for folder_name in os.listdir(input_directory):
+        folder_path = os.path.join(input_directory, folder_name)
+        if os.path.isdir(folder_path):
+            new_folder_name = f"{prefix}_{folder_name}"
+            new_folder_path = os.path.join(input_directory, new_folder_name)
+            os.rename(folder_path, new_folder_path)
+
+def temp3(input_directory):
+    for folder_name in os.listdir(input_directory):
+        if os.path.isdir(os.path.join(input_directory, folder_name)) and folder_name.endswith("_01"):
+            new_name = folder_name[:-3]  # Remove the last 3 characters "_01"
+            old_path = os.path.join(input_directory, folder_name)
+            new_path = os.path.join(input_directory, new_name)
+            os.rename(old_path, new_path)
+            print(f"Renamed {folder_name} to {new_name}")
+
+def temp4(input_directory):
+    for folder_name in os.listdir(input_directory):
+        folder_path = os.path.join(input_directory, folder_name)
+        if os.path.isdir(folder_path):
+            new_folder_name = folder_name + "-01"
+            new_folder_path = os.path.join(input_directory, new_folder_name)
+            os.rename(folder_path, new_folder_path)
+            print(f"Renamed '{folder_name}' to '{new_folder_name}'")
+
+def temp5(directory_a, directory_b):
+    files_a = os.listdir(directory_a)
+    files_b = os.listdir(directory_b)
+
+    common_files = set(files_a) & set(files_b)
+
+    if common_files:
+        print("Common files found:")
+        for filename in common_files:
+            print(filename)
+    else:
+        print("No common files found.")
+
+def temp6(input_directory):
+    folder_count = 0
+    for item in os.listdir(input_directory):
+        item_path = os.path.join(input_directory, item)
+        if os.path.isdir(item_path):
+            folder_count += 1
+    print("folder_count:", folder_count)
+
+
 def main():
 
     # Exec...
-    get_info()
+    get_info(r"")
 
 if __name__ == '__main__':
     main()
