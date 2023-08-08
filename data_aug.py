@@ -12,7 +12,7 @@ import numpy as np
 from mp.data.pytorch.transformation import centre_crop_pad_3d
 
 # Perfom augmentation on dataset
-def augment_image_in_four_intensities(image, noise, mean_val):
+def augment_image_in_four_intensities(image, noise, mean_val, dataset):
     r"""This function takes an image and augments it in 4 intensities for one of 5 artefacts:
         - Blurring
         - Ghosting
@@ -21,46 +21,130 @@ def augment_image_in_four_intensities(image, noise, mean_val):
         - Spike
     """
 
-    # Define augmentation methods
-    if noise == 'blur':
-        blur2 = random_blur(std=0.4)
-        blur3 = random_blur(std=0.8)
-        blur4 = random_blur(std=1.2)
-        blur5 = random_blur(std=1.6)
-        return blur2(image), blur3(image), blur4(image), blur5(image)
+    if dataset == 'task808':
+        # Define augmentation methods
+        if noise == 'blur':
+            blur2 = random_blur(std=1.1)
+            blur3 = random_blur(std=2.2)
+            blur4 = random_blur(std=3.4)
+            blur5 = random_blur(std=4.6)
+            return blur2(image), blur3(image), blur4(image), blur5(image)
+
+        if noise == 'ghosting':
+            ghosting2 = random_ghosting(num_ghosts = (5,5), intensity=(0.5,0.5))
+            ghosting3 = random_ghosting(num_ghosts = (4,4), intensity=(0.5,0.5))
+            ghosting4 = random_ghosting(num_ghosts = (3,3), intensity=(0.8,0.8))
+            ghosting5 = random_ghosting(num_ghosts = (2,2), intensity=(0.5,0.5))
+            return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
+
+        if noise == 'motion':
+            motion2 = random_motion(degrees=(1.0,1.0), translation=(0.2,0.2), num_transforms=1)
+            motion3 = random_motion(degrees=(1.8,1.8), translation=(0.8,0.8), num_transforms=1)
+            motion4 = random_motion(degrees=(2.6,2.6), translation=(1.6,1.6), num_transforms=1)
+            motion5 = random_motion(degrees=(3.4,3.4), translation=(2.4,2.4), num_transforms=1)
+            return motion2(image), motion3(image), motion4(image), motion5(image)
+
+        # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
+        # The mean value of the images differs strongly between different images and the noise is added with absolut values. 
+        # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
+        # impressions of the intensity of the noiseon different images. 
+        if noise == 'noise':
+            noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
+            noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
+            noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
+            noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
+            return noise2(image), noise3(image), noise4(image), noise5(image)
+
+        if noise == 'spike':
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.30, 0.30))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.45, 0.45))
+            spike4 = random_spike(num_spikes=(3,3), intensity=(0.55, 0.55))
+            spike5 = random_spike(num_spikes=(3,3), intensity=(0.70, 0.70))
+            return spike2(image), spike3(image), spike4(image), spike5(image)
 
 
-    if noise == 'ghosting':
-        ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(1.0,1.0))
-        ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(1.0,1.0))
-        ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(1.0,1.0))
-        ghosting5 = random_ghosting(num_ghosts = (2,2), intensity=(1.0,1.0))
-        return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
+    elif dataset == 'task809':
+        # Define augmentation methods
+        if noise == 'blur':
+            blur2 = random_blur(std=0.8)
+            blur3 = random_blur(std=1.6)
+            blur4 = random_blur(std=2.4)
+            blur5 = random_blur(std=3.2)
+            return blur2(image), blur3(image), blur4(image), blur5(image)
 
-    if noise == 'motion':
-        motion2 = random_motion(degrees=(2,2), translation=(2,2), num_transforms=4)
-        motion3 = random_motion(degrees=(4,4), translation=(4,4), num_transforms=4)
-        motion4 = random_motion(degrees=(6,6), translation=(6,6), num_transforms=4)
-        motion5 = random_motion(degrees=(8,8), translation=(8,8), num_transforms=4)
-        return motion2(image), motion3(image), motion4(image), motion5(image)
+        if noise == 'ghosting':
+            ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(0.7,0.7))
+            ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(0.8,0.8))
+            ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(0.9,0.9))
+            ghosting5 = random_ghosting(num_ghosts = (2,2), intensity=(0.6,0.6))
+            return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
 
-    # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
-    # The mean value of the images differs strongly between different images and the noise is added with absolut values. 
-    # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
-    # impressions of the intensity of the noiseon different images. 
-    if noise == 'noise':
-        noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
-        noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
-        noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
-        noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
-        return noise2(image), noise3(image), noise4(image), noise5(image)
+        if noise == 'motion':
+            motion2 = random_motion(degrees=(1,1), translation=(0.5,0.5), num_transforms=1)
+            motion3 = random_motion(degrees=(2,2), translation=(1,1), num_transforms=1)
+            motion4 = random_motion(degrees=(3,3), translation=(1.5,1.5), num_transforms=1)
+            motion5 = random_motion(degrees=(4,4), translation=(2,2), num_transforms=1)
+            return motion2(image), motion3(image), motion4(image), motion5(image)
 
-    if noise == 'spike':
-        spike2 = random_spike(num_spikes=(2,2), intensity=(0.28, 0.28))
-        spike3 = random_spike(num_spikes=(2,2), intensity=(0.42, 0.42))
-        spike4 = random_spike(num_spikes=(3,3), intensity=(0.56, 0.56))
-        spike5 = random_spike(num_spikes=(3,3), intensity=(0.75, 0.75))
-        return spike2(image), spike3(image), spike4(image), spike5(image)
+        # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
+        # The mean value of the images differs strongly between different images and the noise is added with absolut values. 
+        # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
+        # impressions of the intensity of the noiseon different images. 
+        if noise == 'noise':
+            noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
+            noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
+            noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
+            noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
+            return noise2(image), noise3(image), noise4(image), noise5(image)
+
+        if noise == 'spike':
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.28, 0.28))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.42, 0.42))
+            spike4 = random_spike(num_spikes=(3,3), intensity=(0.55, 0.55))
+            spike5 = random_spike(num_spikes=(3,3), intensity=(0.70, 0.70))
+            return spike2(image), spike3(image), spike4(image), spike5(image)
+    
+
+    else: # dataset == 'adac'
+        # Define augmentation methods
+        if noise == 'blur':
+            blur2 = random_blur(std=0.8)
+            blur3 = random_blur(std=2.0)
+            blur4 = random_blur(std=3.0)
+            blur5 = random_blur(std=4.0)
+            return blur2(image), blur3(image), blur4(image), blur5(image)
+
+        if noise == 'ghosting':
+            ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(0.7,0.7))
+            ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(0.7,0.7))
+            ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(0.7,0.7))
+            ghosting5 = random_ghosting(num_ghosts = (1,1), intensity=(0.7,0.7))
+            return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
+
+        if noise == 'motion':
+            motion2 = random_motion(degrees=(1,1), translation=(1.15,1.15), num_transforms=1)
+            motion3 = random_motion(degrees=(1.3,1.3), translation=(0.5,0.5), num_transforms=1)
+            motion4 = random_motion(degrees=(1.6,1.6), translation=(0.6,0.6), num_transforms=2)
+            motion5 = random_motion(degrees=(2,2), translation=(0.8,0.8), num_transforms=3)
+            return motion2(image), motion3(image), motion4(image), motion5(image)
+
+        # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
+        # The mean value of the images differs strongly between different images and the noise is added with absolut values. 
+        # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
+        # impressions of the intensity of the noiseon different images. 
+        if noise == 'noise':
+            noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
+            noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
+            noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
+            noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
+            return noise2(image), noise3(image), noise4(image), noise5(image)
+
+        if noise == 'spike':
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.30, 0.30))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.43, 0.43))
+            spike4 = random_spike(num_spikes=(3,3), intensity=(0.50, 0.50))
+            spike5 = random_spike(num_spikes=(3,3), intensity=(0.60, 0.60))
+            return spike2(image), spike3(image), spike4(image), spike5(image)
 
 
 # Intensity Functions for data Augmentation
@@ -148,7 +232,7 @@ def random_spike(num_spikes, intensity):
     return spike
 
 
-def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
     r"""This function augments Data for the artefact motion. 
         It saves the augmented images with and without fft, 
         because the motion classifier uses fft images.
@@ -168,13 +252,20 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
 
     for num, filename in enumerate(filenames):
         print('motion: ' + str(num+1) +'/' + str(len(filenames)))
-        img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))
-        
+        path = os.path.join(source_path, filename,'img', 'img.nii.gz')
+        img = sitk.ReadImage(path)
+
+        # Ignore images with less than 8 slices
+        slices = img.GetSize()[2]
+        if slices < min_slices:
+            print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
+            continue
+
         # Edit to keep the z-dimension (number of slices) of the actual image
-        #actual_size = img.GetSize()
-        #tmp = list(img_size)
-        #tmp[1] = actual_size[2]
-        #img_size = tuple(tmp)
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -185,8 +276,11 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
             img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
             diff_img = []
 
+        # Differ parameters for artifacts according to the datasets (specified in the filename: <dataset_name>_patient_<id>)
+        dataset = filename.split('_')[0]
+
         # Augment image
-        motion2, motion3, motion4, motion5 = augment_image_in_four_intensities(img, 'motion', mean_val)
+        motion2, motion3, motion4, motion5 = augment_image_in_four_intensities(img, 'motion', mean_val, dataset)
 
         motion = [img, motion2, motion3, motion4, motion5]
         motion_without_fft = []
@@ -242,7 +336,7 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
     r"""This function augments Data for the artefact blur. 
     """
     
@@ -257,13 +351,20 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('blur: ' + str(num+1) +'/' + str(len(filenames)))
-        img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
-        
+        path = os.path.join(source_path, filename,'img', 'img.nii.gz')
+        img = sitk.ReadImage(path)
+
+        # Ignore images with less than 8 slices
+        slices = img.GetSize()[2]
+        if slices < min_slices:
+            print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
+            continue
+
         # Edit to keep the z-dimension (number of slices) of the actual image
-        #actual_size = img.GetSize()
-        #tmp = list(img_size)
-        #tmp[1] = actual_size[2]
-        #img_size = tuple(tmp)
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -274,8 +375,11 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
             img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
             diff_img = []
 
+        # Differ parameters for artifacts according to the datasets (specified in the filename)
+        dataset = filename.split('_')[0]
+
         # Augment image
-        blur2, blur3, blur4, blur5 = augment_image_in_four_intensities(img, 'blur', mean_val)
+        blur2, blur3, blur4, blur5 = augment_image_in_four_intensities(img, 'blur', mean_val, dataset)
         blur = [img, blur2, blur3, blur4, blur5]
         blur_without_fft = []
 
@@ -324,7 +428,7 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
     r"""This function augments Data for the artefact ghosting. 
         It saves the augmented images with and without fft, 
         because the ghosting classifier uses fft images.
@@ -341,13 +445,20 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('ghosting: ' + str(num+1) +'/' + str(len(filenames)))
-        img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
-        
+        path = os.path.join(source_path, filename,'img', 'img.nii.gz')
+        img = sitk.ReadImage(path)
+
+        # Ignore images with less than 8 slices
+        slices = img.GetSize()[2]
+        if slices < min_slices:
+            print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
+            continue
+
         # Edit to keep the z-dimension (number of slices) of the actual image
-        #actual_size = img.GetSize()
-        #tmp = list(img_size)
-        #tmp[1] = actual_size[2]
-        #img_size = tuple(tmp)
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -358,8 +469,11 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
             img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
             diff_img = []
 
+        # Differ parameters for artifacts according to the datasets (specified in the filename)
+        dataset = filename.split('_')[0]
+
         # Augment image
-        ghosting2, ghosting3, ghosting4, ghosting5 = augment_image_in_four_intensities(img, 'ghosting', mean_val)
+        ghosting2, ghosting3, ghosting4, ghosting5 = augment_image_in_four_intensities(img, 'ghosting', mean_val, dataset)
         
         ghosting = [img, ghosting2, ghosting3, ghosting4, ghosting5]
         ghosting_without_fft = []
@@ -409,7 +523,7 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
     r"""This function augments Data for the artefact noise. 
     """
     
@@ -424,13 +538,20 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('noise: ' + str(num+1) +'/' + str(len(filenames)))
-        img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
-        
+        path = os.path.join(source_path, filename,'img', 'img.nii.gz')
+        img = sitk.ReadImage(path)
+
+        # Ignore images with less than 8 slices
+        slices = img.GetSize()[2]
+        if slices < min_slices:
+            print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
+            continue
+
         # Edit to keep the z-dimension (number of slices) of the actual image
-        #actual_size = img.GetSize()
-        #tmp = list(img_size)
-        #tmp[1] = actual_size[2]
-        #img_size = tuple(tmp)
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -441,8 +562,11 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
             img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
             diff_img = []
 
+        # Differ parameters for artifacts according to the datasets (specified in the filename)
+        dataset = filename.split('_')[0]
+
         # Augment image
-        noise2, noise3, noise4, noise5 = augment_image_in_four_intensities(img, 'noise', mean_val)
+        noise2, noise3, noise4, noise5 = augment_image_in_four_intensities(img, 'noise', mean_val, dataset)
         noise = [img, noise2, noise3, noise4, noise5]
         noise_without_fft = []
 
@@ -491,7 +615,7 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35)):
+def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
     r"""This function augments Data for the artefact spike. 
         It saves the augmented images with and without fft, 
         because the spike classifier uses fft images.
@@ -507,15 +631,20 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
     # Loop through filenames to augment and save every image
     for num, filename in enumerate(filenames):
         print('spike: ' + str(num+1) +'/' + str(len(filenames)))
-        
+        path = os.path.join(source_path, filename,'img', 'img.nii.gz')
+        img = sitk.ReadImage(path)
 
-        img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz'))        
-        
+        # Ignore images with less than 8 slices
+        slices = img.GetSize()[2]
+        if slices < min_slices:
+            print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
+            continue
+
         # Edit to keep the z-dimension (number of slices) of the actual image
-        #actual_size = img.GetSize()
-        #tmp = list(img_size)
-        #tmp[1] = actual_size[2]
-        #img_size = tuple(tmp)
+        actual_size = img.GetSize()
+        tmp = list(img_size)
+        tmp[1] = actual_size[2]
+        img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -526,8 +655,11 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
             img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
             diff_img = []
 
+        # Differ parameters for artifacts according to the datasets (specified in the filename)
+        dataset = filename.split('_')[0]
+
         # Augment image
-        spike2, spike3, spike4, spike5 = augment_image_in_four_intensities(img, 'spike', mean_val)
+        spike2, spike3, spike4, spike5 = augment_image_in_four_intensities(img, 'spike', mean_val, dataset)
         spike = [img, spike2, spike3, spike4, spike5]
         spike_without_fft = []
 

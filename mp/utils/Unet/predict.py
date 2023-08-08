@@ -58,7 +58,7 @@ def mask_to_image(mask: np.ndarray):
 
 
 #if __name__ == '__main__':
-def prediction(source_path, target_path, device, img_size=(1,35,51,35), bilinear=False, scale=1, mask_threshold=0.5, no_save=False, viz=True):
+def prediction(source_path, target_path, device, img_size=(1,10,256,256), bilinear=False, scale=1, mask_threshold=0.5, no_save=False, viz=True):
     
     delete_images_and_labels(target_path)
     filenames = [x for x in os.listdir(source_path)]

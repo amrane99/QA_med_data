@@ -21,25 +21,28 @@ from data_aug import augmentation_segmentation, augmentation_inference
 class JIPDataset(CNNDataset):
     r"""Class for the dataset provided by the JIP tool/workflow.
     """
-    def __init__(self, subset=None, img_size=(1, 60, 256, 256), num_intensities=5, data_type='all', augmentation=True, data_augmented=False,
+    def __init__(self, subset=None, img_size=(1, 10, 256, 256), num_intensities=5, data_type='all', augmentation=True, data_augmented=False,
                  gpu=True, cuda=0, msg_bot=False, nr_images=20, build_dataset=False, dtype='train', noise='blur', ds_name='Task', seed=42,
-                 restore=False, inference_name = None, fft_for_inference = False):
+                 restore=False, inference_name = None, fft_for_inference = False, ds_names=[], artefacts=['blur', 'ghosting', 'motion', 'noise', 'spike']):
         r"""Constructor"""
         assert subset is None, "No subsets for this dataset."
         assert len(img_size) == 4, "Image size needs to be 4D --> (batch_size, depth, height, width)."
         self.img_size = img_size
         self.num_intensities = num_intensities
+        self.artefacts = artefacts
         self.augmentation = augmentation
         self.gpu = gpu
         self.cuda = cuda
         self.msg_bot = msg_bot
         self.data_type = data_type
         self.ds_name = ds_name
+        self.ds_names = ds_names
         self.nr_images = nr_images
         self.restore = restore
         self.data_augmented = data_augmented
         self.inference_name = inference_name # Name of inference instance
         self.fft_for_inference = fft_for_inference # Indicates if fft is used
+        print(f"FFT used: {self.fft_for_inference}\n")
         self.data_path = os.path.join(os.environ["WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Inference Data
         print("self.data_path:", self.data_path)
         self.data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
@@ -75,7 +78,7 @@ class JIPDataset(CNNDataset):
                 augmentation_inference(self.data_path, self.data_dataset_path)
                 
             if self.data_type == 'train':
-                image_size = (1, 60, 256, 256)
+                image_size = (1, 10, 256, 256)
                 if not self.restore:
                     delete_images_and_labels(self.train_dataset_path)
                     delete_images_and_labels(self.train_without_fft_path)
@@ -93,7 +96,7 @@ class JIPDataset(CNNDataset):
                 generate_train_labels(self.num_intensities, self.train_path, self.train_dataset_path, self.train_without_fft_path, True)
                 
             if self.data_type == 'test':
-                image_size = (1, 60, 256, 256)
+                image_size = (1, 10, 256, 256)
                 delete_images_and_labels(self.test_dataset_path)
                 delete_images_and_labels(self.test_without_fft_path)
                 augment_data_aug_blur(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
@@ -105,7 +108,7 @@ class JIPDataset(CNNDataset):
                 generate_train_labels(self.num_intensities, self.test_path, self.test_dataset_path, self.test_without_fft_path)
 
             if self.data_type == 'all':
-                image_size = (1, 60, 256, 256)
+                image_size = (1, 10, 256, 256)
                 delete_images_and_labels(self.data_dataset_path)
                 delete_images_and_labels(self.data_without_fft_path)
                 
@@ -135,7 +138,7 @@ class JIPDataset(CNNDataset):
                 generate_test_labels(self.num_intensities, self.test_path, self.test_dataset_path)
 
             if self.data_type == 'segmentation':
-                image_size = (1, 60, 256, 256)
+                image_size = (1, 10, 256, 256)
                 delete_images_and_labels(self.segmentation_path)
                 augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'img', img_size=image_size)
                 augmentation_segmentation(self.train_path, self.segmentation_path, image_type = 'seg', img_size=image_size)
@@ -165,7 +168,7 @@ class JIPDataset(CNNDataset):
                 self.data_type = dtype
                 self.preprocess()
             if not self.data_augmented:
-                image_size = (1, 60, 256, 256)
+                image_size = (1, 10, 256, 256)
                 augment_data_aug_blur(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 augment_data_aug_noise(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
                 augment_data_aug_motion(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
@@ -218,7 +221,7 @@ class JIPDataset(CNNDataset):
                     ))
 
         if dtype == 'train':        
-            # Foldernames are patient_id
+            # Foldernames are <dataset_name>_patient_<id>
             study_names = [x for x in os.listdir(self.train_dataset_path) if '._' not in x]
 
             # Load labels and build one hot vector
@@ -232,8 +235,16 @@ class JIPDataset(CNNDataset):
             instances = list()
             print()
 
+            # Mulitple dataset implementaion only used if more than one dataset_name is specified in the dataset_names list
+            # otherwise normal behaviour can be expected to build the dataset, that means dataset_name is used
+            if not self.ds_names == None:
+                if len(self.ds_names) > 1:
+                    study_names = _get_equally_distributed_names_multiple_datasets(study_names, swapped_labels, self.ds_names, noise, self.num_intensities, seed, self.artefacts)
+                else:
+                    study_names = _get_equally_distributed_names(study_names, swapped_labels, self.ds_name, noise, self.nr_images, self.num_intensities, seed)
+            else:
+                study_names = _get_equally_distributed_names(study_names, swapped_labels, self.ds_name, noise, self.nr_images, self.num_intensities, seed)
 
-            study_names = _get_equally_distributed_names(study_names, swapped_labels, self.ds_name, noise, self.nr_images, self.num_intensities, seed)
             # Initialize list for group_ids 
             group_ids = []
             # Build instances
@@ -314,3 +325,79 @@ def _get_equally_distributed_names(study_names, labels, ds_name, noise, nr_image
     # Reset random seed
     random.seed()
     return ds_names
+
+
+def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_names, noise, num_intensities, seed, artefacts):
+    r"""Multiple dataset strategy ignores ds_name and uses ds_names instead. 
+        Extracts a list of folder names representing ds_name Dataset, based on noise and the determined min_length across all data.
+        An equal distribution of images from each dataset will be extracted, ie. from each intensity level resulting
+        in a dataset of (min_lenght x num_datasets) foldernames."""
+    # Set random seed
+    random.seed(seed)
+    print("================ NEW Implemention for input with multiple datasets ===============")
+
+    print(f"len(study_names): {len(study_names)} ")
+
+    ### Just for printing ###
+    print("")
+    all_images = [x for x in study_names for name in ds_names if name in x]
+    num_all_images = len(all_images)
+    print("num_all_images:", num_all_images)
+    total_img_cnt = 0
+    for ds_name in ds_names:
+        for art in artefacts:
+            img_cnt = sum(ds_name in x and art in x for x in all_images)
+            print(f"- artifact {art} has {img_cnt} images (divide it by num_intensities={num_intensities})")
+            total_img_cnt += img_cnt
+        assert (img_cnt % num_intensities) == 0
+        print(f"=> Dataset {ds_name} consists of {int(img_cnt/num_intensities)} images.\n")
+    print("")
+    
+    assert num_all_images == total_img_cnt
+    assert (total_img_cnt/num_intensities)%len(artefacts) == 0
+    print("Total images found:", (total_img_cnt/num_intensities)/len(artefacts))
+    ########################
+    
+    # Select intensities equally
+    selection = list()
+    for i in range(1, num_intensities+1):
+        print("Iteration ", i)
+
+        labels_key = str(i/num_intensities) + '_' + noise
+        possible_values = labels[labels_key]
+        
+        # Select only files from the current datasets with the current intensity level and where the name matches its label
+        intensity_names = [x for x in possible_values for name in ds_names if name in x and x in study_names]
+        
+        print(f"len(intensity_names): {len(intensity_names)} ")
+
+        # Create a dictionary and store intensity_name lists for each dataset
+        ds_dict = {ds_name: [] for ds_name in ds_names}
+        for intensity_name in intensity_names:
+            for ds_name in ds_names:
+                if ds_name in intensity_name:
+                    ds_dict[ds_name].append(intensity_name)
+                    break
+        
+        print(f"len(ds_dict): {len(ds_dict)} ")
+        
+        # Find the minimum length
+        lengths = [len(value) for value in ds_dict.values()]
+        min_length = min(lengths)
+        print("min_lenght:", min_length)
+        print(f"Equal amout of {min_length} of [{labels_key}] images from each dataset is randomly selected.")
+
+        # Secelct random images from each dataset based on the calculated numbers
+        for ds_name in ds_names:
+            samples = random.sample(ds_dict[ds_name], min_length)
+            print(f"- {ds_name}: picked {len(samples)} samples")
+            selection.extend(samples)
+        
+        print(f"length of commulated selection: {len(selection)}\n")
+
+    # Reset random seed
+    random.seed()
+    print(f"Total amout of images for training: {len(selection)/num_intensities}\n")
+    assert (len(selection) % num_intensities) == 0
+
+    return selection

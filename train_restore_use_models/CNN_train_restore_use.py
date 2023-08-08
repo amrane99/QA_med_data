@@ -87,14 +87,15 @@ def _CNN_initialize_and_train(config):
     device_name = torch.cuda.get_device_name(device)
     print('Device name: {}'.format(device_name))
     output_features = config['num_intensities']
-    dataset_name = 'Task'
+    #dataset_name = 'Task'
+    dataset_name = config['dataset_name']
 
     # 2. Define data
     data = Data()
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='train', noise=config['noise'],\
-                     ds_name=dataset_name, restore=config['restore'])
+                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'])
 
     data.add_dataset(JIP)
     train_ds = (dataset_name, 'train')
@@ -135,7 +136,7 @@ def _CNN_initialize_and_train(config):
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
@@ -146,8 +147,10 @@ def _CNN_initialize_and_train(config):
 
     # 7. Initialize model
     if config['noise'] == 'spike':
+        print(f"Model for {config['noise']}: Densenet121")
         model = Densenet121()
     else:
+        print(f"Model for {config['noise']}: MobileNetV2")
         model = MobileNetV2()
     model.to(device)
 
@@ -223,7 +226,7 @@ def _CNN_restore_and_train(config):
             if len(data_ixs) > 0: # Sometimes val indicess may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                     samples_per_volume = 15)
     
     # 6. Build train dataloader
@@ -359,7 +362,7 @@ def _CNN_retrain(config):
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
@@ -455,7 +458,7 @@ def _CNN_test(config):
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                     samples_per_volume = 15)
 
     # 5. Build test dataloader
@@ -531,7 +534,7 @@ def _CNN_predict(config):
                 if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                     aug = config['augment_strat'] if not('test' in split) else 'none'
                     datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                        ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                         samples_per_volume = 1) 
 
         datasets_fft = dict()
@@ -540,7 +543,7 @@ def _CNN_predict(config):
                 if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                     aug = config['augment_strat'] if not('test' in split) else 'none'
                     datasets_fft[(ds_name, split)] = Pytorch3DQueue(ds, 
-                        ix_lst = data_ixs, size = (1, 35, 51, 35), aug_key = aug, 
+                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
                         samples_per_volume = 1) 
 
 

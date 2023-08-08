@@ -11,7 +11,7 @@ from mp.utils import load_restore as lr
 
 
 
-def hippocampus_fully_captured(source_path, device, img_size=(1,35,51,35)):
+def hippocampus_fully_captured(source_path, device, img_size=(1,10,256,256)):
     r"""Method which checks wether the hippocampus is fully captured. The first and the last slices have to be completed back. The slices in the middle must have black edges"""
 
     #Load the Unet

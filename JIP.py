@@ -188,11 +188,16 @@ if __name__ == "__main__":
     # NOTE: For learning rate decay, set the variables 'lr_decay', 'decay_type' and 'decay_rate'. decay_type can be 
     #       {'exp_decay', 'step_decay', 'mstep_decay', 'plat_decay'}, whereas decay_rate represents gamma in all of these decays except
     #       plat_decay. --> lr will normally always updated with lr = lr * decay_rate, so consider this when setting decay_rate.
-    config = {'device': cuda, 'input_shape':  (1, 60, 256, 256), 'augmentation': False, 'mode': mode,
-              'data_type': data_type, 'lr': 1e-3, 'batch_size': 128, 'num_intensities': 5, 'nr_epochs': 150, 'decay_type': 'plat_decay',
+    # NOTE: nr_images specifies the number of images per intensity level, taken to create the dataset
+    #       (ie. nr_images from each intensity level results in a dataset of num_intensities x nr_images)
+    # NOTE: dataset_names specifies the datasets of the images to be trained in one run (use either dataset_name or dataset_names).
+    #       It is only relevant and interpreted if the number of datasets is more than one (outherwise just dataset_name is used).  
+    config = {'device': cuda, 'input_shape':  (1, 10, 256, 256), 'augmentation': False, 'mode': mode,
+              'data_type': data_type, 'lr': 1e-3, 'batch_size': 16, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
-              'bot_msg_interval': 10, 'nr_images': 530, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
-              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'Task'}
+              'bot_msg_interval': 10, 'nr_images': 216, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
+              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'patient', 
+              'dataset_names':['adac', 'task808', 'task809'], 'artefacts':['blur', 'ghosting', 'motion', 'noise', 'spike']}
 
     # -------------------------
     # Preprocess
@@ -241,6 +246,11 @@ if __name__ == "__main__":
     # Train
     # -------------------------
     if mode == 'train':
+        print(f"Specified parameters for training:")
+        print("- nr_epochs:", config['nr_epochs'])
+        print("- lr:", config['lr'])
+        print("- decay_rate:", config['decay_rate'])
+        print("")
         dir_name = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], noise, 'states')
         if try_catch == 0:
             try_catch = 1

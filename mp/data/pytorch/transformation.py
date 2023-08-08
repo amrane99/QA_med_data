@@ -114,7 +114,7 @@ def centre_crop_pad_2d(img, size=(1, 128, 128)):
     img = torch.squeeze(img, -1)
     return img
 
-def centre_crop_pad_3d(img, size=(1, 60, 256, 256), padding_mode=0): #original: size=(1, 35, 35, 51)
+def centre_crop_pad_3d(img, size=(1, 10, 256, 256), padding_mode=0): #original: size=(1, 35, 35, 51)
     r"""Center-crops to the specified size, unless the image is to small in some
     dimension, then padding takes place. For 3D data.
     """
@@ -133,7 +133,7 @@ def pad_3d_if_required(instance, size):
         transform = torchio.transforms.Pad(padding=(0, 0, 0, 0, 0, delta), padding_mode=0)
         subject = transform(subject)
         instance.x = torchio.Image(tensor=subject.x.tensor, type=torchio.INTENSITY)
-        instance.y = torchio.Image(tensor=subject.y, type=torchio.LABEL) 
+        #instance.y = torchio.Image(tensor=subject.y, type=torchio.LABEL)   # Leads to an dimension error
         instance.shape = subject.shape
     return instance
 
