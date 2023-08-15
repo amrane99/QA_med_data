@@ -95,7 +95,7 @@ def _CNN_initialize_and_train(config):
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='train', noise=config['noise'],\
-                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'])
+                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'], fft=config['fft'])
 
     data.add_dataset(JIP)
     train_ds = (dataset_name, 'train')

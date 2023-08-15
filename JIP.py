@@ -191,13 +191,14 @@ if __name__ == "__main__":
     # NOTE: nr_images specifies the number of images per intensity level, taken to create the dataset
     #       (ie. nr_images from each intensity level results in a dataset of num_intensities x nr_images)
     # NOTE: dataset_names specifies the datasets of the images to be trained in one run (use either dataset_name or dataset_names).
-    #       It is only relevant and interpreted if the number of datasets is more than one (outherwise just dataset_name is used).  
+    #       It is only relevant and interpreted if the number of datasets is more than one (outherwise just dataset_name is used).
+    # NOTE: fft specifies whether the fft variant of images for training and inference is used or not (when preprocessing both image variants are generated)
     config = {'device': cuda, 'input_shape':  (1, 10, 256, 256), 'augmentation': False, 'mode': mode,
-              'data_type': data_type, 'lr': 1e-3, 'batch_size': 16, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
+              'data_type': data_type, 'lr': 1e-3, 'batch_size': 32, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
-              'bot_msg_interval': 10, 'nr_images': 216, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
+              'bot_msg_interval': 10, 'nr_images': 58, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
               'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'patient', 
-              'dataset_names':['adac', 'task808', 'task809'], 'artefacts':['blur', 'ghosting', 'motion', 'noise', 'spike']}
+              'dataset_names':['acdc', 'task808', 'task809'], 'artefacts':['blur', 'ghosting', 'motion', 'noise', 'spike'], 'fft': False}
 
     # -------------------------
     # Preprocess
@@ -246,7 +247,7 @@ if __name__ == "__main__":
     # Train
     # -------------------------
     if mode == 'train':
-        print(f"Specified parameters for training:")
+        print(f"Specified parameters for training of {config['noise']}:")
         print("- nr_epochs:", config['nr_epochs'])
         print("- lr:", config['lr'])
         print("- decay_rate:", config['decay_rate'])
@@ -291,6 +292,7 @@ if __name__ == "__main__":
                     print('Model for noise type {} could not be restored/trained. The following error occured: {}.'.format(noise, error))
                     if msg_bot:
                         bot.send_msg('Model for noise type {} could not be restored/trained. The following error occured: {}.'.format(noise, error))
+        print("\nFinished training for:", config['noise'])
     
     # -------------------------
     # Retrain

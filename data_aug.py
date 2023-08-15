@@ -105,7 +105,7 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return spike2(image), spike3(image), spike4(image), spike5(image)
     
 
-    else: # dataset == 'adac'
+    else: # dataset == 'acdc'
         # Define augmentation methods
         if noise == 'blur':
             blur2 = random_blur(std=0.8)

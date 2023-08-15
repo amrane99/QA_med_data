@@ -2,6 +2,7 @@ import SimpleITK as sitk
 import numpy as np
 import os
 import shutil
+import random
 from scipy.stats import mode
 
 
@@ -32,11 +33,11 @@ def get_info(file_path):
 def analyze_sizes(in_dir_path, type='decathlon'):
     r'''
         Analyse the sizes of each .nii.gz image in a root directory.
-        Don't forget to set the type of the dataset which help to read the images: possible types: 'decathlon', 'adac', 'sunnybrook'
+        Don't forget to set the type of the dataset which help to read the images: possible types: 'decathlon', 'acdc', 'sunnybrook'
         This method is intended to be applied on the original datasets - download links are in the README.md
     '''
     dim = 3
-    if (type =='adac' or type =='sunnybrook'):
+    if (type =='acdc' or type =='sunnybrook'):
         dim = 4
 
     # Array that stores all sizes of the images
@@ -51,7 +52,7 @@ def analyze_sizes(in_dir_path, type='decathlon'):
                 continue
             if not (file_name.endswith(".nii.gz") or file_name.endswith(".dcm")):
                 continue
-            if type == 'adac':
+            if type == 'acdc':
                 if not "4d" in file_name:
                     continue
             
@@ -136,7 +137,7 @@ def repair_nifty(in_file_path, out_dir_path=None, prefix=None):
     print("Repaired " + in_file_path + " -> " + out_file_path)
 
 
-def adac_repair_nifties(in_dir_path, out_dir_path, prefix=None, copy_all=False):
+def acdc_repair_nifties(in_dir_path, out_dir_path, prefix=None, copy_all=False):
     r'''
         - in_dir_path:  Input directory path to the directory where files to be repaired are stored.
         - out_dir_path: Output directory path to a directory where the repaired files will be stored.
@@ -248,7 +249,7 @@ def split_4d(in_dir_path, out_dir_path=None, key='4d'):
                     print(f"Frame {i+1} saved as ", out_file_path)
 
 
-def adac_split_4d(in_dir_path, out_dir_path, copy_all=False):
+def acdc_split_4d(in_dir_path, out_dir_path, copy_all=False):
     r'''
         - in_dir_path:      Directory path that specifies the entry point of application.
         - out_dir_path:     Directory path that specifies the output directory for the images.
@@ -571,7 +572,7 @@ def convert_folder_structure(in_dir_path, prefix="patient"):
     r"""
         - in_dir_path:      Directory path that specifies the entry point of application.
 
-        This method can be used to prepare the ADAC data for augmentation. 
+        This method can be used to prepare the ACDC data for augmentation. 
         It adjusts the directory structure to fit the JIP-format.
         It performs a conversion of a given directory the following way:
         Example with prefix="patient"
@@ -663,14 +664,14 @@ def prepare_task_datasets(in_dir_path, out_dir_path, dataset_name="task"):
 
 
 
-def temp1(directory):
+def cut_filenames(directory):
     for filename in os.listdir(directory):
         if filename.endswith('.nii.gz') and '_' in filename:
             parts = filename.split('_')
             new_filename = f"{parts[0]}.nii.gz"
             os.rename(os.path.join(directory, filename), os.path.join(directory, new_filename))
 
-def temp2(input_directory, prefix="adac"):
+def add_prefix(input_directory, prefix="acdc"):
     for folder_name in os.listdir(input_directory):
         folder_path = os.path.join(input_directory, folder_name)
         if os.path.isdir(folder_path):
@@ -678,7 +679,7 @@ def temp2(input_directory, prefix="adac"):
             new_folder_path = os.path.join(input_directory, new_folder_name)
             os.rename(folder_path, new_folder_path)
 
-def temp3(input_directory):
+def remove_last_chars(input_directory):
     for folder_name in os.listdir(input_directory):
         if os.path.isdir(os.path.join(input_directory, folder_name)) and folder_name.endswith("_01"):
             new_name = folder_name[:-3]  # Remove the last 3 characters "_01"
@@ -687,7 +688,7 @@ def temp3(input_directory):
             os.rename(old_path, new_path)
             print(f"Renamed {folder_name} to {new_name}")
 
-def temp4(input_directory):
+def add_postfix(input_directory):
     for folder_name in os.listdir(input_directory):
         folder_path = os.path.join(input_directory, folder_name)
         if os.path.isdir(folder_path):
@@ -696,7 +697,7 @@ def temp4(input_directory):
             os.rename(folder_path, new_folder_path)
             print(f"Renamed '{folder_name}' to '{new_folder_name}'")
 
-def temp5(directory_a, directory_b):
+def compare_filenames(directory_a, directory_b):
     files_a = os.listdir(directory_a)
     files_b = os.listdir(directory_b)
 
@@ -709,13 +710,81 @@ def temp5(directory_a, directory_b):
     else:
         print("No common files found.")
 
-def temp6(input_directory):
+def count_folders(input_directory):
     folder_count = 0
     for item in os.listdir(input_directory):
         item_path = os.path.join(input_directory, item)
         if os.path.isdir(item_path):
             folder_count += 1
     print("folder_count:", folder_count)
+
+
+def rename_folders(input_folder):
+    if not os.path.exists(input_folder):
+        print("Input folder does not exist.")
+        return
+
+    for folder_name in os.listdir(input_folder):
+        folder_path = os.path.join(input_folder, folder_name)
+        if os.path.isdir(folder_path):
+            new_folder_name = folder_name.replace("adac", "acdc")
+            new_folder_path = os.path.join(input_folder, new_folder_name)
+            os.rename(folder_path, new_folder_path)
+            print(f"Renamed folder: {folder_name} to {new_folder_name}")
+
+
+def rename_files(input_folder):
+    if not os.path.exists(input_folder):
+        print("Input folder does not exist.")
+        return
+
+    for filename in os.listdir(input_folder):
+        if filename.endswith(".nii.gz"):
+            new_filename = filename.replace("adac", "acdc")
+            old_path = os.path.join(input_folder, filename)
+            new_path = os.path.join(input_folder, new_filename)
+            os.rename(old_path, new_path)
+            print(f"Renamed: {filename} to {new_filename}")
+
+
+
+def divide_data(input_folder, train_folder, test_folder, train_percentage):
+    random.seed(42)  # Set the random seed for reproducibility
+    
+    if not os.path.exists(input_folder):
+        print("Input folder does not exist.")
+        return
+
+    if not os.path.exists(train_folder):
+        os.makedirs(train_folder)
+    if not os.path.exists(test_folder):
+        os.makedirs(test_folder)
+
+    nii_files = [file for file in os.listdir(input_folder) if file.endswith(".nii.gz")]
+
+    random.shuffle(nii_files)
+    total_files = len(nii_files)
+    train_count = int(total_files * train_percentage)
+    
+    train_files = nii_files[:train_count]
+    test_files = nii_files[train_count:]
+
+    cnt = 0
+    for file in train_files:
+        cnt = cnt + 1
+        source_path = os.path.join(input_folder, file)
+        destination_path = os.path.join(train_folder, file)
+        shutil.copy(source_path, destination_path)
+    print(f"{cnt} files in Tr")
+    cnt = 0
+    for file in test_files:
+        cnt = cnt + 1
+        source_path = os.path.join(input_folder, file)
+        destination_path = os.path.join(test_folder, file)
+        shutil.copy(source_path, destination_path)
+    print(f"{cnt} files in Tr")
+
+    print("\nData division completed.")
 
 
 def main():

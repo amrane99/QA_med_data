@@ -23,7 +23,7 @@ class JIPDataset(CNNDataset):
     """
     def __init__(self, subset=None, img_size=(1, 10, 256, 256), num_intensities=5, data_type='all', augmentation=True, data_augmented=False,
                  gpu=True, cuda=0, msg_bot=False, nr_images=20, build_dataset=False, dtype='train', noise='blur', ds_name='Task', seed=42,
-                 restore=False, inference_name = None, fft_for_inference = False, ds_names=[], artefacts=['blur', 'ghosting', 'motion', 'noise', 'spike']):
+                 restore=False, inference_name = None, fft = False, ds_names=[], artefacts=['blur', 'ghosting', 'motion', 'noise', 'spike']):
         r"""Constructor"""
         assert subset is None, "No subsets for this dataset."
         assert len(img_size) == 4, "Image size needs to be 4D --> (batch_size, depth, height, width)."
@@ -41,8 +41,8 @@ class JIPDataset(CNNDataset):
         self.restore = restore
         self.data_augmented = data_augmented
         self.inference_name = inference_name # Name of inference instance
-        self.fft_for_inference = fft_for_inference # Indicates if fft is used
-        print(f"FFT used: {self.fft_for_inference}\n")
+        self.fft = fft # Indicates if fft is used
+        print(f"\nFFT used: {self.fft}\n")
         self.data_path = os.path.join(os.environ["WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Inference Data
         print("self.data_path:", self.data_path)
         self.data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
@@ -161,9 +161,23 @@ class JIPDataset(CNNDataset):
                   then the preprocessing step should be performed again since this process includes the augmentation
                   (only for train data needed). In such a case, data_augmented in the config file should be set to False,
                   i.e. data is not augmentated and needs to be done."""
+        if self.fft:
+            data_ds_path = self.data_dataset_path
+            train_ds_path = self.train_dataset_path
+            test_ds_path = self.test_dataset_path
+        else:
+            data_ds_path = self.data_without_fft_path
+            train_ds_path = self.train_without_fft_path
+            test_ds_path = self.test_without_fft_path
+        print("")
+        print(f"-> data dataset path: {data_ds_path}")
+        print(f"-> train dataset path: {train_ds_path}")
+        print(f"-> test dataset path: {test_ds_path}")
+        print("")
+        
         # Extract all images, if not already done
         if dtype == 'train':
-            if not os.path.isdir(self.train_dataset_path) or not os.listdir(self.train_dataset_path):
+            if not os.path.isdir(train_ds_path) or not os.listdir(train_ds_path):
                 print("Train data needs to be preprocessed..")
                 self.data_type = dtype
                 self.preprocess()
@@ -176,13 +190,13 @@ class JIPDataset(CNNDataset):
                 augment_data_aug_spike(self.train_path, self.train_dataset_path, self.train_without_fft_path, img_size=image_size)
 
         elif 'test' in dtype:
-            if not os.path.isdir(self.test_dataset_path) or not os.listdir(self.test_dataset_path):
+            if not os.path.isdir(test_ds_path) or not os.listdir(test_ds_path):
                 print("Test data needs to be preprocessed..")
                 self.data_type = 'test'
                 self.preprocess()
 
         elif 'inference' in dtype:
-            if not os.path.isdir(self.data_dataset_path) or not os.listdir(self.data_dataset_path):
+            if not os.path.isdir(data_ds_path) or not os.listdir(data_ds_path):
                 print("Inference data needs to be preprocessed..")
                 self.data_type = dtype
                 self.preprocess()
@@ -196,14 +210,14 @@ class JIPDataset(CNNDataset):
 
         # Build dataset based on dtype
         if dtype == 'inference':
-            # Build instances, dataset without labels! Dataset can be build with or without fft depending on fft_for_inference
+            # Build instances, dataset without labels! Dataset can be build with or without fft depending on self.fft
             instances = list()
             print()
             
             msg = 'Creating inference dataset from images: '
             #msg += str(num + 1) + ' of ' + str(len(study_names)) + '.'
             print (msg, end = '\r')
-            if self.fft_for_inference:
+            if self.fft:
                 # Build dataset with fft
                 instances.append(CNNInstance(
                     x_path = os.path.join(self.data_dataset_path, self.inference_name, 'img', 'fft.nii.gz'),
@@ -214,7 +228,7 @@ class JIPDataset(CNNDataset):
             else:
                 # Build dataset without fft
                 instances.append(CNNInstance(
-                    x_path = os.path.join(self.data_dataset_path, self.inference_name, 'img', 'img.nii.gz'),
+                    x_path = os.path.join(self.data_without_fft_path, self.inference_name, 'img', 'img.nii.gz'),
                     y_label = torch.tensor(1),
                     name = self.inference_name,
                     group_id = None
@@ -222,14 +236,14 @@ class JIPDataset(CNNDataset):
 
         if dtype == 'train':        
             # Foldernames are <dataset_name>_patient_<id>
-            study_names = [x for x in os.listdir(self.train_dataset_path) if '._' not in x]
+            study_names = [x for x in os.listdir(train_ds_path) if '._' not in x]
 
             # Load labels and build one hot vector
-            labels = lr.load_json(self.train_dataset_path, 'labels.json')
+            labels = lr.load_json(train_ds_path, 'labels.json')
             one_hot = torch.nn.functional.one_hot(torch.arange(0, self.num_intensities), num_classes=self.num_intensities)
 
             # Load labels for selecting data equally distributed
-            swapped_labels = lr.load_json(self.train_dataset_path, 'labels_swapped.json')
+            swapped_labels = lr.load_json(train_ds_path, 'labels_swapped.json')
 
             # Build instances list
             instances = list()
@@ -239,7 +253,7 @@ class JIPDataset(CNNDataset):
             # otherwise normal behaviour can be expected to build the dataset, that means dataset_name is used
             if not self.ds_names == None:
                 if len(self.ds_names) > 1:
-                    study_names = _get_equally_distributed_names_multiple_datasets(study_names, swapped_labels, self.ds_names, noise, self.num_intensities, seed, self.artefacts)
+                    study_names = _get_equally_distributed_names_multiple_datasets(study_names, swapped_labels, self.ds_names, noise, self.nr_images, self.num_intensities, seed, self.artefacts)
                 else:
                     study_names = _get_equally_distributed_names(study_names, swapped_labels, self.ds_name, noise, self.nr_images, self.num_intensities, seed)
             else:
@@ -260,7 +274,7 @@ class JIPDataset(CNNDataset):
                 group_id = group_ids.index(group_name)
 
                 instances.append(CNNInstance(
-                    x_path = os.path.join(self.train_dataset_path, name, 'img', 'img.nii.gz'),
+                    x_path = os.path.join(train_ds_path, name, 'img', 'img.nii.gz'),
                     y_label = one_hot[int(labels[name] * self.num_intensities) - 1],
                     name = name, group_id = group_id))
 
@@ -270,10 +284,10 @@ class JIPDataset(CNNDataset):
         if 'test' in dtype:
             # Foldernames are patient_id based on dtype
             
-            study_names = [x for x in os.listdir(self.test_dataset_path) if '._' not in x and '.json' not in x]
+            study_names = [x for x in os.listdir(test_ds_path) if '._' not in x and '.json' not in x]
        
             # Load labels and build one hot vector
-            labels = lr.load_json(self.test_dataset_path, 'labels.json')
+            labels = lr.load_json(test_ds_path, 'labels.json')
             one_hot = torch.nn.functional.one_hot(torch.arange(0, self.num_intensities), num_classes=self.num_intensities)
 
             # Build instances
@@ -288,7 +302,7 @@ class JIPDataset(CNNDataset):
                     print (msg, end = '\r')
                     a_name = name
                     instances.append(CNNInstance(
-                        x_path = os.path.join(self.test_dataset_path, name, 'img', 'img.nii.gz'),
+                        x_path = os.path.join(test_ds_path, name, 'img', 'img.nii.gz'),
                         y_label = one_hot[int(labels[a_name] * self.num_intensities) - 1],
                         name = name,
                         group_id = None
@@ -296,7 +310,7 @@ class JIPDataset(CNNDataset):
 
         if 'segmentation' in dtype:
             # Returns study_names for segmentation
-            study_names = [x for x in os.listdir(self.train_dataset_path) if '._' not in x and '.json' not in x]
+            study_names = [x for x in os.listdir(train_ds_path) if '._' not in x and '.json' not in x]
 
         return instances
 
@@ -307,14 +321,16 @@ def _get_equally_distributed_names(study_names, labels, ds_name, noise, nr_image
         in a dataset of num_intensities x nr_images foldernames."""
     # Set random seed
     random.seed(seed)
+    print("================ Standard Implemention for input with one dataset ===============")
+
     # Select intensities equally
     ds_names = list()
     for i in range(1, num_intensities+1):
         labels_key = str(i/num_intensities) + '_' + noise
         possible_values = labels[labels_key]
         # Select only files from the current dataset with the current intensity level and where the name matches its label
-        #intensity_names = [x for x in possible_values if ds_name in x and x in study_names]
-        intensity_names = [x for x in possible_values if x in study_names]
+        intensity_names = [x for x in possible_values if ds_name in x and x in study_names]
+        #intensity_names = [x for x in possible_values if x in study_names]
         
         # Select random names
         if len(intensity_names) > nr_images:
@@ -324,10 +340,17 @@ def _get_equally_distributed_names(study_names, labels, ds_name, noise, nr_image
 
     # Reset random seed
     random.seed()
+    
+    #print("")
+    #print(f"selction: -------------")
+    #for x in ds_names:
+    #    print(x)
+    #print(f"-------------- len(selection): {len(ds_names)}\n")
+
     return ds_names
 
 
-def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_names, noise, num_intensities, seed, artefacts):
+def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_names, noise, nr_images, num_intensities, seed, artefacts):
     r"""Multiple dataset strategy ignores ds_name and uses ds_names instead. 
         Extracts a list of folder names representing ds_name Dataset, based on noise and the determined min_length across all data.
         An equal distribution of images from each dataset will be extracted, ie. from each intensity level resulting
@@ -350,7 +373,7 @@ def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_nam
             print(f"- artifact {art} has {img_cnt} images (divide it by num_intensities={num_intensities})")
             total_img_cnt += img_cnt
         assert (img_cnt % num_intensities) == 0
-        print(f"=> Dataset {ds_name} consists of {int(img_cnt/num_intensities)} images.\n")
+        print(f"=> Provided dataset {ds_name} consists of {int(img_cnt/num_intensities)} images.\n")
     print("")
     
     assert num_all_images == total_img_cnt
@@ -383,13 +406,19 @@ def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_nam
         
         # Find the minimum length
         lengths = [len(value) for value in ds_dict.values()]
-        min_length = min(lengths)
-        print("min_lenght:", min_length)
-        print(f"Equal amout of {min_length} of [{labels_key}] images from each dataset is randomly selected.")
+        
+        # Strategies to select the amout of images per dataset
+        #sel_per_ds = min(lengths)          # select max images possible per dataset (adaptive)
+        sel_per_ds = nr_images              # select nr_images per dataset (must be <= max images possible per dataset)
+        
+        assert nr_images <= min(lengths) # be sure that nr_images to be selected is less or equal to the number of images of the smallest dataset
+        
+        print("sel_per_ds:", sel_per_ds)
+        print(f"Equal amout of {sel_per_ds} of [{labels_key}] images from each dataset is randomly selected.")
 
         # Secelct random images from each dataset based on the calculated numbers
         for ds_name in ds_names:
-            samples = random.sample(ds_dict[ds_name], min_length)
+            samples = random.sample(ds_dict[ds_name], sel_per_ds)
             print(f"- {ds_name}: picked {len(samples)} samples")
             selection.extend(samples)
         
@@ -397,6 +426,13 @@ def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_nam
 
     # Reset random seed
     random.seed()
+    
+    #print("")
+    #print(f"selection: -------------")
+    #for x in selection:
+    #    print(x)
+    #print(f"-------------- len(selection): {len(selection)}\n")
+    
     print(f"Total amout of images for training: {len(selection)/num_intensities}\n")
     assert (len(selection) % num_intensities) == 0
 
