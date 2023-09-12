@@ -249,8 +249,10 @@ class JIPDataset(CNNDataset):
             instances = list()
             print()
 
-            # Mulitple dataset implementaion only used if more than one dataset_name is specified in the dataset_names list
-            # otherwise normal behaviour can be expected to build the dataset, that means dataset_name is used
+            # Mulitple dataset implementaion is only used if more than one dataset_name is specified in the dataset_names list.
+            # In this case nr_images of each dataset will be selected for training (according to the naming convention, 
+            # where folder names of the images include the corresponding dataset_name).
+            # Otherwise normal behaviour can be expected to build the dataset; that means only dataset_name is used and nr_images only counts for that.
             if not self.ds_names == None:
                 if len(self.ds_names) > 1:
                     study_names = _get_equally_distributed_names_multiple_datasets(study_names, swapped_labels, self.ds_names, noise, self.nr_images, self.num_intensities, seed, self.artefacts)
@@ -373,12 +375,12 @@ def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_nam
             print(f"- artifact {art} has {img_cnt} images (divide it by num_intensities={num_intensities})")
             total_img_cnt += img_cnt
         assert (img_cnt % num_intensities) == 0
-        print(f"=> Provided dataset {ds_name} consists of {int(img_cnt/num_intensities)} images.\n")
+        print(f"=> Provided dataset {ds_name} consists of {int(img_cnt/num_intensities)} patients.\n")
     print("")
     
     assert num_all_images == total_img_cnt
     assert (total_img_cnt/num_intensities)%len(artefacts) == 0
-    print("Total images found:", (total_img_cnt/num_intensities)/len(artefacts))
+    print("Total patients found:", (total_img_cnt/num_intensities)/len(artefacts))
     ########################
     
     # Select intensities equally
@@ -433,7 +435,7 @@ def _get_equally_distributed_names_multiple_datasets(study_names, labels, ds_nam
     #    print(x)
     #print(f"-------------- len(selection): {len(selection)}\n")
     
-    print(f"Total amout of images for training: {len(selection)/num_intensities}\n")
+    print(f"Total amout of patients for training: {len(selection)/num_intensities}\n")
     assert (len(selection) % num_intensities) == 0
 
     return selection

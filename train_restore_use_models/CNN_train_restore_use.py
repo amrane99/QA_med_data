@@ -19,6 +19,11 @@ from mp.agents.cnn_agents import NetAgent
 from mp.utils.save_results import save_results, save_only_test_results
 from mp.quantifiers.NoiseQualityQuantifier import NoiseQualityQuantifier
 
+from mp.models.cnn.mobilenet_v3 import MobileNetV3
+from mp.models.cnn.densenet import Densenet161
+from mp.models.cnn.densenet import Densenet169
+from mp.models.cnn.densenet import Densenet201
+
 def train_model(config):
     r"""This function tries to intializes and trains a model.
         It returns True if the model was sucessfully trained and if not an error will be returned as well."""
@@ -98,6 +103,7 @@ def _CNN_initialize_and_train(config):
                      ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'], fft=config['fft'])
 
     data.add_dataset(JIP)
+    print("Dataset length:", len(data.datasets[config['dataset_name']].instances))
     train_ds = (dataset_name, 'train')
     val_ds = (dataset_name, 'val')
     test_ds = (dataset_name, 'test')
@@ -107,8 +113,8 @@ def _CNN_initialize_and_train(config):
     for ds_name, ds in data.datasets.items():
         splits[ds_name] = split_dataset(ds, test_ratio = config['test_ratio'], 
                           val_ratio = config['val_ratio'], nr_repetitions = 1, cross_validation = False)
-    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'states')
-    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'results')
+    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'states')
+    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'results')
     if not os.path.exists(paths):
         os.makedirs(paths)
     else:
@@ -132,7 +138,9 @@ def _CNN_initialize_and_train(config):
     # 5. Bring data to Pytorch format
     datasets = dict()
     for ds_name, ds in data.datasets.items():
+        print(f"\nDataset Splits:")
         for split, data_ixs in splits[ds_name][0].items():
+            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
@@ -140,6 +148,7 @@ def _CNN_initialize_and_train(config):
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
+    #print(">>>> datasets[(train_ds)]:", len(datasets[(train_ds)]))
     dl = DataLoader(datasets[(train_ds)], 
         batch_size = config['batch_size'], shuffle = True)
     dl_val = DataLoader(datasets[(val_ds)], 
@@ -147,10 +156,27 @@ def _CNN_initialize_and_train(config):
 
     # 7. Initialize model
     if config['noise'] == 'spike':
-        print(f"Model for {config['noise']}: Densenet121")
+        
+        print(f"\nModel for {config['noise']}: Densenet121")
         model = Densenet121()
+
+        #print(f"\nModel for {config['noise']}: Densenet161")
+        #model = Densenet161()
+
+        #print(f"\nModel for {config['noise']}: Densenet169")
+        #model = Densenet169()
+
+        #print(f"\nModel for {config['noise']}: Densenet201")
+        #model = Densenet201()
+
+        #print(f"\nModel for {config['noise']}: MobileNetV3 large")
+        #model = MobileNetV3(mode='large')
+
+        #print(f"\nModel for {config['noise']}: MobileNetV3 small")
+        #model = MobileNetV3(mode='small')
+
     else:
-        print(f"Model for {config['noise']}: MobileNetV2")
+        print(f"\nModel for {config['noise']}: MobileNetV2")
         model = MobileNetV2()
     model.to(device)
 
@@ -321,7 +347,7 @@ def _CNN_retrain(config):
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='train', noise=config['noise'],\
-                     ds_name=dataset_name, restore=config['restore'])
+                     ds_name=dataset_name, restore=config['restore'], fft=config['fft'])
 
     data.add_dataset(JIP)
     train_ds = (dataset_name, 'train')
@@ -433,7 +459,7 @@ def _CNN_test(config):
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype=config['mode'], noise=config['noise'],\
-                     ds_name=dataset_name, restore=config['restore'])
+                     ds_name=dataset_name, restore=config['restore'], fft=config['fft'])
     data.add_dataset(JIP)
     test_ds = (dataset_name, 'test')
 
@@ -441,6 +467,8 @@ def _CNN_test(config):
     splits = dict()
     for ds_name, ds in data.datasets.items():
         splits[ds_name] = split_dataset(ds, test_ratio = 1, val_ratio = 0, nr_repetitions = 1, cross_validation = False)
+        print("number:", len(splits[ds_name]))
+        print("splits[ds_name]:", splits[ds_name])
     pathr = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], config['mode']+'_results')
     if not os.path.exists(pathr):
         os.makedirs(pathr)
@@ -454,7 +482,9 @@ def _CNN_test(config):
 
     datasets = dict()
     for ds_name, ds in data.datasets.items():
+        print(f"\nDataset Splits:")
         for split, data_ixs in splits[ds_name][0].items():
+            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
@@ -485,10 +515,13 @@ def _CNN_test(config):
 
 
 def _CNN_predict(config):
-    r"""This function loads an existing (pre-trained) model and makes predictions based on the input file(s). The predictions are made for fft and ~fft images."""
+    r"""This function loads an existing (pre-trained) model and makes predictions based on the input file(s). The predictions are made for fft and ~fft images.
+    """
 
     metrices = dict()
     data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
+    print("\ndata_dataset_path:", data_dataset_path)
+    print("\n")
     study_names = [x for x in os.listdir(data_dataset_path) if '._' not in x]
     #Initialize the NoiseQualityQuantifier for all artefacts
     NQQ_noise = NoiseQualityQuantifier(device=config['device'], artefact_given = 'noise', output_features=config['num_intensities'])
@@ -506,12 +539,12 @@ def _CNN_predict(config):
         JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                         augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                         msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='inference', noise=config['noise'],\
-                        ds_name='Task', restore=config['restore'], inference_name = study_names[i], fft_for_inference = False) #NBTN JIPDataset mit einem Inferencebild
+                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i], fft = False) #NBTN JIPDataset mit einem Inferencebild
         JIP_fft = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                         augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                         msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='inference', noise=config['noise'],\
-                        ds_name='Task', restore=config['restore'], inference_name = study_names[i], fft_for_inference = True) #NBTN JIPDataset mit einem Inferencebild
-        
+                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i], fft = True) #NBTN JIPDataset mit einem Inferencebild
+
         data.add_dataset(JIP)
         data_fft.add_dataset(JIP_fft)
         inference_ds = (config['dataset_name'], 'test')
@@ -548,17 +581,21 @@ def _CNN_predict(config):
 
 
         #4. Initialize dataloader
+        for key, value in datasets.items():
+            print(key, ":", value)
+
         dl = DataLoader(datasets[(inference_ds)], batch_size = 1, shuffle = False)
         dl_fft = DataLoader(datasets_fft[(inference_ds)], batch_size = 1, shuffle = False)
 
         # 5. Calculate metrices, depending on wether the model was trained with fft images or with ~fft images, fft/~fft images are used for the prediction
         metrices_x = dict()
         file = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"], study_names[i], 'img', 'img.nii.gz')
+        print("file:", file)
         for num, (x,_) in enumerate(dl):
             
             msg = "Loading SimpleITK images and calculating metrices (doing inference): "
             print (msg, end = "\r")
-            metrices_x['HFC'], metrices_x['noise'] = NQQ_noise.get_quality(x=x, file=file, device=config['device'])  
+            metrices_x['CFC'], metrices_x['noise'] = NQQ_noise.get_quality(x=x, file=file, device=config['device'])  
             _, metrices_x['blur'] = NQQ_blur.get_quality(x=x, file=file, device=config['device'])  
 
         for num, (x,_) in enumerate(dl_fft):

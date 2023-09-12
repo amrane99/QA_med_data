@@ -38,10 +38,10 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
 
         if noise == 'motion':
-            motion2 = random_motion(degrees=(1.0,1.0), translation=(0.2,0.2), num_transforms=1)
+            motion2 = random_motion(degrees=(1.0,1.0), translation=(0.3,0.3), num_transforms=1)
             motion3 = random_motion(degrees=(1.8,1.8), translation=(0.8,0.8), num_transforms=1)
-            motion4 = random_motion(degrees=(2.6,2.6), translation=(1.6,1.6), num_transforms=1)
-            motion5 = random_motion(degrees=(3.4,3.4), translation=(2.4,2.4), num_transforms=1)
+            motion4 = random_motion(degrees=(2.6,2.6), translation=(1.6,1.6), num_transforms=2)
+            motion5 = random_motion(degrees=(3.4,3.4), translation=(2.4,2.4), num_transforms=3)
             return motion2(image), motion3(image), motion4(image), motion5(image)
 
         # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
@@ -56,10 +56,10 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return noise2(image), noise3(image), noise4(image), noise5(image)
 
         if noise == 'spike':
-            spike2 = random_spike(num_spikes=(2,2), intensity=(0.30, 0.30))
-            spike3 = random_spike(num_spikes=(2,2), intensity=(0.45, 0.45))
-            spike4 = random_spike(num_spikes=(3,3), intensity=(0.55, 0.55))
-            spike5 = random_spike(num_spikes=(3,3), intensity=(0.70, 0.70))
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.35, 0.35))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.50, 0.50))
+            spike4 = random_spike(num_spikes=(3,3), intensity=(0.60, 0.60))
+            spike5 = random_spike(num_spikes=(3,3), intensity=(0.75, 0.75))
             return spike2(image), spike3(image), spike4(image), spike5(image)
 
 
@@ -80,10 +80,10 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
 
         if noise == 'motion':
-            motion2 = random_motion(degrees=(1,1), translation=(0.5,0.5), num_transforms=1)
-            motion3 = random_motion(degrees=(2,2), translation=(1,1), num_transforms=1)
-            motion4 = random_motion(degrees=(3,3), translation=(1.5,1.5), num_transforms=1)
-            motion5 = random_motion(degrees=(4,4), translation=(2,2), num_transforms=1)
+            motion2 = random_motion(degrees=(1.0,1.0), translation=(0.2,0.2), num_transforms=1)
+            motion3 = random_motion(degrees=(1.3,1.3), translation=(0.5,0.5), num_transforms=1)
+            motion4 = random_motion(degrees=(1.5,1.5), translation=(0.8,0.8), num_transforms=2)
+            motion5 = random_motion(degrees=(1.8,1.8), translation=(1.6,1.6), num_transforms=3)
             return motion2(image), motion3(image), motion4(image), motion5(image)
 
         # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
@@ -98,8 +98,8 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return noise2(image), noise3(image), noise4(image), noise5(image)
 
         if noise == 'spike':
-            spike2 = random_spike(num_spikes=(2,2), intensity=(0.28, 0.28))
-            spike3 = random_spike(num_spikes=(2,2), intensity=(0.42, 0.42))
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.30, 0.30))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.45, 0.45))
             spike4 = random_spike(num_spikes=(3,3), intensity=(0.55, 0.55))
             spike5 = random_spike(num_spikes=(3,3), intensity=(0.70, 0.70))
             return spike2(image), spike3(image), spike4(image), spike5(image)
@@ -115,17 +115,17 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return blur2(image), blur3(image), blur4(image), blur5(image)
 
         if noise == 'ghosting':
-            ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(0.7,0.7))
-            ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(0.7,0.7))
-            ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(0.7,0.7))
-            ghosting5 = random_ghosting(num_ghosts = (1,1), intensity=(0.7,0.7))
+            ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(0.6,0.6))
+            ghosting3 = random_ghosting(num_ghosts = (4,4), intensity=(0.8,0.8))
+            ghosting4 = random_ghosting(num_ghosts = (2,2), intensity=(0.8,0.8))
+            ghosting5 = random_ghosting(num_ghosts = (1,1), intensity=(0.8,0.8))
             return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
 
         if noise == 'motion':
-            motion2 = random_motion(degrees=(1,1), translation=(1.15,1.15), num_transforms=1)
+            motion2 = random_motion(degrees=(1.0,1.0), translation=(0.2,0.2), num_transforms=1)
             motion3 = random_motion(degrees=(1.3,1.3), translation=(0.5,0.5), num_transforms=1)
-            motion4 = random_motion(degrees=(1.6,1.6), translation=(0.6,0.6), num_transforms=2)
-            motion5 = random_motion(degrees=(2,2), translation=(0.8,0.8), num_transforms=3)
+            motion4 = random_motion(degrees=(1.5,1.5), translation=(0.8,0.8), num_transforms=2)
+            motion5 = random_motion(degrees=(1.8,1.8), translation=(1.6,1.6), num_transforms=3)
             return motion2(image), motion3(image), motion4(image), motion5(image)
 
         # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
@@ -232,7 +232,7 @@ def random_spike(num_spikes, intensity):
     return spike
 
 
-def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
+def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact motion. 
         It saves the augmented images with and without fft, 
         because the motion classifier uses fft images.
@@ -262,10 +262,11 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
             continue
 
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -336,7 +337,7 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
+def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact blur. 
     """
     
@@ -361,10 +362,11 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
             continue
 
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -428,7 +430,7 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
+def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact ghosting. 
         It saves the augmented images with and without fft, 
         because the ghosting classifier uses fft images.
@@ -455,10 +457,11 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
             continue
 
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -523,7 +526,7 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
+def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact noise. 
     """
     
@@ -548,10 +551,11 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
             continue
 
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -615,7 +619,7 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
                 sitk.WriteImage(x, os.path.join(target_path, 'diff_images', a_filename+'_diff.nii.gz'))
 
 
-def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=(1, 35, 51, 35), min_slices=8):
+def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact spike. 
         It saves the augmented images with and without fft, 
         because the spike classifier uses fft images.
@@ -641,10 +645,11 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
             continue
 
         # Edit to keep the z-dimension (number of slices) of the actual image
-        actual_size = img.GetSize()
-        tmp = list(img_size)
-        tmp[1] = actual_size[2]
-        img_size = tuple(tmp)
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
 
         img_array = sitk.GetArrayFromImage(img)
         # Calculate mean value of the image
@@ -711,7 +716,7 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
 
 
 
-def augmentation_segmentation(source_path, target_path, image_type, img_size=(1, 35, 51, 35)):
+def augmentation_segmentation(source_path, target_path, image_type, img_size=(1, 10, 256, 256)):
     r"""This function augments Data for the segmentation. 
         It brings data to the expected format for the segmentation UNet.
         Image_type is 'img' or 'seg'.
@@ -744,7 +749,7 @@ def augmentation_segmentation(source_path, target_path, image_type, img_size=(1,
 
 
 # Augments Data for inference
-def augmentation_inference(source_path, target_path, img_size=(1, 35, 51, 35)):
+def augmentation_inference(source_path, target_path, img_size=(1, 10, 256, 256)):
     r"""This function augments Data for inference. 
     """
 

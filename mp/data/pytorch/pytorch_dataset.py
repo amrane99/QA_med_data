@@ -3,6 +3,8 @@
 # mp.data.datasets.dataset.Dataset and a list of instance indexes.
 # ------------------------------------------------------------------------------
 
+import os
+import mp.utils.load_restore as lr
 from torch.utils.data import Dataset
 
 class PytorchDataset(Dataset):
@@ -30,6 +32,33 @@ class PytorchDataset(Dataset):
         self.instances = [ex for ix, ex in enumerate(dataset.instances) 
             if ix in ix_lst]
         self.size = size
+
+        ######-----------------------------@ Compromise-Solution @-----------------------------######
+        ### This is a solution to store the splits of data used for train/test/val ###
+        ### This is only needed if training is performed                                                                                  ###
+        
+        #<ds_name>_patient_<id>_<noise><intensity>
+
+        #last_segment = self.instances[0].name.split('_')[-1]
+        #digit_position = next((i for i, c in enumerate(last_segment) if c.isdigit()), None)
+        #if digit_position is not None:
+        #    noise = last_segment[:digit_position]
+        #else:
+        #    print("Something went wrong")
+        #    noise = last_segment
+        #
+        #path = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], noise+"_cardiac", 'states')
+        #
+        #data_list = []
+        #for i, instance in enumerate(self.instances):
+        #    data_list.append(instance.name)
+        #    #print(f"        {i}: {instance.name}")
+        #
+        #lr.save_split_name_list(path, "split_data_names",  data_list)
+        
+        ###                                                                                   ###
+        ######-----------------------------------------------------------------------------######
+
 
     def __len__(self):
         return len(self.instances)

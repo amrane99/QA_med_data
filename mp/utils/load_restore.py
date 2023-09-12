@@ -77,6 +77,24 @@ def save_json_beautiful(data, path, name, sort=True):
     with open(os.path.join(path, name), 'w') as fp:
         json.dump(data, fp, sort_keys=sort, indent=4)
 
+def save_split_name_list(path, name, data):
+    r"""This function saves a list in a dictionary as a json file at the specified path with indention.
+        (It is used to store the patient paths of the splits when training)"""
+    if '.json' not in name:
+        name += '.json'
+    path = os.path.join(path, name)
+    try:
+        with open(path, "r") as json_file:
+            existing_data = json.load(json_file)
+    except FileNotFoundError:
+        existing_data = {}
+    # Determine the key based on the number of existing keys
+    key = str(len(existing_data) + 1)
+    # Append the data list to the generated key
+    existing_data[key] = data
+    with open(path, "w") as json_file:
+        json.dump(existing_data, json_file)
+
 # NIFTY
 def nifty_dump(x, name, path):
     r"""Save a tensor of numpy array in nifty format."""

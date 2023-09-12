@@ -190,13 +190,16 @@ if __name__ == "__main__":
     #       plat_decay. --> lr will normally always updated with lr = lr * decay_rate, so consider this when setting decay_rate.
     # NOTE: nr_images specifies the number of images per intensity level, taken to create the dataset
     #       (ie. nr_images from each intensity level results in a dataset of num_intensities x nr_images)
+    #       Note: This behavior changes when used in combination with multiple dataset names (see: NOTE: dataset_names)
     # NOTE: dataset_names specifies the datasets of the images to be trained in one run (use either dataset_name or dataset_names).
-    #       It is only relevant and interpreted if the number of datasets is more than one (outherwise just dataset_name is used).
-    # NOTE: fft specifies whether the fft variant of images for training and inference is used or not (when preprocessing both image variants are generated)
+    #       This parameter is only considered if the number of elements specified in dataset_names is greater than one (outherwise dataset_name is used).
+    #       When there are dataset_names specified, nr_images will be taken from each dataset defined in dataset_names. This requires that the patient folders 
+    #       are subject to a naming convention that includes the corresponding dataset_name as substring and that there are at least nr_imags images per dataset provided.
+    # NOTE: fft specifies whether the fft variant of images for training/testing is used or not (when preprocessing or inference-testing both variants are considered regardless)
     config = {'device': cuda, 'input_shape':  (1, 10, 256, 256), 'augmentation': False, 'mode': mode,
-              'data_type': data_type, 'lr': 1e-3, 'batch_size': 32, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
+              'data_type': data_type, 'lr': 1e-3, 'batch_size': 16, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
-              'bot_msg_interval': 10, 'nr_images': 58, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
+              'bot_msg_interval': 10, 'nr_images': 72, 'val_ratio': 0.2, 'test_ratio': 0.2, 'augment_strat': 'none',
               'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'patient', 
               'dataset_names':['acdc', 'task808', 'task809'], 'artefacts':['blur', 'ghosting', 'motion', 'noise', 'spike'], 'fft': False}
 
