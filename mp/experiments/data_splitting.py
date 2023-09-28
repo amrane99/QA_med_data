@@ -77,7 +77,7 @@ def split_dataset_no_test(
         print("-excluded were:", len(dataset.hold_out_ixs))
         
         test = []
-        splits.append({'-train': train, 'val': val, 'test': test})
+        splits.append({'train': train, 'val': val, 'test': test})
     return splits
 
 def split_instances(dataset, ratio=0.7, exclude_ixs=[], stratisfied=True, 
