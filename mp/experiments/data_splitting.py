@@ -60,9 +60,28 @@ def split_dataset(
             splits.append({'train': train, 'val': val, 'test': test})
     return splits
 
+def split_dataset_no_test(
+    dataset, val_ratio=0.2, 
+    nr_repetitions=5, 
+    respecting_groups=True):
+    r"""Splits a dataset into different index folds
+    """
+    splits = []
+    print(f"-dataset got {dataset.size} instances")
+    for k in range(nr_repetitions):
+        print('Repetition k {} of {}'.format(k+1, nr_repetitions))
+        train, val = split_instances(dataset=dataset, 
+            ratio=1-val_ratio, exclude_ixs=dataset.hold_out_ixs, 
+            stratisfied=True, respecting_groups=respecting_groups)
+        print(f"-val={val_ratio}: {len(val)}; train={1-val_ratio}: {len(train)}")
+        print("-excluded were:", len(dataset.hold_out_ixs))
+        
+        test = []
+        splits.append({'-train': train, 'val': val, 'test': test})
+    return splits
 
 def split_instances(dataset, ratio=0.7, exclude_ixs=[], stratisfied=True, 
-    respecting_groups=True):
+    respecting_groups=True, seed=42):
     r"""Divides instances into two stratisfied sets. The stratification 
     operations prefers to give more examples of underrepresented classes
     to smaller sets (when the examples in a class cannot be split without
@@ -77,6 +96,7 @@ def split_instances(dataset, ratio=0.7, exclude_ixs=[], stratisfied=True,
     
     Returns (tuple[list[int]]): 2 index lists with the indexes
     """
+    random.seed(seed)
     ixs = range(dataset.size)
     ixs = [ix for ix in ixs if ix not in exclude_ixs]
     first_ds_len = math.floor(len(ixs)*ratio)

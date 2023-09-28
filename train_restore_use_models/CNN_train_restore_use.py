@@ -9,6 +9,7 @@ import torch.optim as optim
 from mp.data.data import Data
 from mp.data.datasets.dataset_JIP_cnn import JIPDataset
 from mp.experiments.data_splitting import split_dataset
+from mp.experiments.data_splitting import split_dataset_no_test
 import mp.utils.load_restore as lr
 from mp.data.pytorch.pytorch_cnn_dataset import Pytorch3DQueue
 from mp.models.cnn.cnn import CNN_Net3D
@@ -103,16 +104,13 @@ def _CNN_initialize_and_train(config):
                      ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'], fft=config['fft'])
 
     data.add_dataset(JIP)
-    print("Dataset length:", len(data.datasets[config['dataset_name']].instances))
     train_ds = (dataset_name, 'train')
     val_ds = (dataset_name, 'val')
-    test_ds = (dataset_name, 'test')
 
     # 3. Split data and define path
     splits = dict()
     for ds_name, ds in data.datasets.items():
-        splits[ds_name] = split_dataset(ds, test_ratio = config['test_ratio'], 
-                          val_ratio = config['val_ratio'], nr_repetitions = 1, cross_validation = False)
+        splits[ds_name] = split_dataset_no_test(ds, val_ratio = config['val_ratio'], nr_repetitions = 1)
     paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'states')
     pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'results')
     if not os.path.exists(paths):
@@ -148,15 +146,17 @@ def _CNN_initialize_and_train(config):
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
-    #print(">>>> datasets[(train_ds)]:", len(datasets[(train_ds)]))
     dl = DataLoader(datasets[(train_ds)], 
         batch_size = config['batch_size'], shuffle = True)
     dl_val = DataLoader(datasets[(val_ds)], 
         batch_size = config['batch_size'], shuffle = True)
 
     # 7. Initialize model
-    if config['noise'] == 'spike':
+    if config['noise'] == 'xxx':
         
+        #print(f"\nModel for {config['noise']}: MobileNetV2")
+        #model = MobileNetV2()
+
         print(f"\nModel for {config['noise']}: Densenet121")
         model = Densenet121()
 
@@ -176,8 +176,9 @@ def _CNN_initialize_and_train(config):
         #model = MobileNetV3(mode='small')
 
     else:
-        print(f"\nModel for {config['noise']}: MobileNetV2")
-        model = MobileNetV2()
+        print(f"\nModel for {config['noise']}: Densenet161")
+        model = Densenet161()
+
     model.to(device)
 
     # 8. Define loss and optimizer
@@ -200,7 +201,35 @@ def _CNN_initialize_and_train(config):
                        store_data = config['store_data'])
                         
     # 10. Build test dataloader
-    dl = DataLoader(datasets[(test_ds)],
+    JIP_ts = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type='test',\
+                     augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
+                     msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='test', noise=config['noise'],\
+                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], fft=config['fft'])
+    data_ts = Data()
+    data_ts.add_dataset(JIP_ts)
+
+    test_ds = (dataset_name, 'test')
+
+    splits_ts = dict()
+    for ds_name, ds in data_ts.datasets.items():
+        splits_ts[ds_name] = split_dataset(ds, test_ratio = 1, val_ratio = 0, nr_repetitions = 1, cross_validation = False)
+
+    if splits_ts is not None:
+        lr.save_json(splits_ts, path = paths, name = 'data_splits_ts')
+
+    datasets_ts = dict()
+    for ds_name, ds in data_ts.datasets.items():
+        print(f"\nDataset Splits_ts:")
+        for split, data_ixs in splits_ts[ds_name][0].items():
+            print(f"   - split: {split} has {len(data_ixs)} images")
+            if len(data_ixs) > 0: # Sometimes val indices may be an empty list
+                aug = config['augment_strat'] if not('test' in split) else 'none'
+                print("aug:", aug)
+                datasets_ts[(ds_name, split)] = Pytorch3DQueue(ds, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    samples_per_volume = 15)
+    
+    dl = DataLoader(datasets_ts[(test_ds)],
             batch_size = config['batch_size'], shuffle = True)
     
     # 11. Test model

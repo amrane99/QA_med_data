@@ -39,22 +39,22 @@ class PytorchDataset(Dataset):
         
         #<ds_name>_patient_<id>_<noise><intensity>
 
-        #last_segment = self.instances[0].name.split('_')[-1]
-        #digit_position = next((i for i, c in enumerate(last_segment) if c.isdigit()), None)
-        #if digit_position is not None:
-        #    noise = last_segment[:digit_position]
-        #else:
-        #    print("Something went wrong")
-        #    noise = last_segment
-        #
-        #path = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], noise+"_cardiac", 'states')
-        #
-        #data_list = []
-        #for i, instance in enumerate(self.instances):
-        #    data_list.append(instance.name)
-        #    #print(f"        {i}: {instance.name}")
-        #
-        #lr.save_split_name_list(path, "split_data_names",  data_list)
+        last_segment = self.instances[0].name.split('_')[-1]
+        digit_position = next((i for i, c in enumerate(last_segment) if c.isdigit()), None)
+        if digit_position is not None:
+            noise = last_segment[:digit_position]
+        else:
+            print("Something went wrong")
+            noise = last_segment
+        
+        path = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], noise+"_cardiac", 'states')
+        
+        data_list = []
+        for i, instance in enumerate(self.instances):
+            data_list.append(instance.name)
+            #print(f"        {i}: {instance.name}")
+        
+        lr.save_split_name_list(path, "split_data_names",  data_list)
         
         ###                                                                                   ###
         ######-----------------------------------------------------------------------------######

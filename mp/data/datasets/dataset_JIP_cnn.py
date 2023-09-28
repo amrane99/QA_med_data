@@ -42,27 +42,17 @@ class JIPDataset(CNNDataset):
         self.data_augmented = data_augmented
         self.inference_name = inference_name # Name of inference instance
         self.fft = fft # Indicates if fft is used
-        print(f"\nFFT used: {self.fft}\n")
+        print(f"\nFFT used: {self.fft}")
         self.data_path = os.path.join(os.environ["WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Inference Data
-        print("self.data_path:", self.data_path)
         self.data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
-        print("self.data_dataset_path:", self.data_dataset_path)
         self.data_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_WITHOUT_FFT_DIR"])
-        print("self.data_without_fft_path:", self.data_without_fft_path)
         self.train_path = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Train Data
-        print("self.train_path:", self.train_path)
         self.train_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_DIR"])
-        print("self.train_dataset_path:", self.train_dataset_path)
         self.train_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TRAIN_WITHOUT_FFT_DIR"])
-        print("self.train_without_fft_path:", self.train_without_fft_path)
         self.test_path = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_IN_DIR"]) # Test Data
-        print("self.test_path:", self.test_path)
         self.test_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_DIR"])
-        print("self.test_dataset_path:", self.test_dataset_path)
         self.test_without_fft_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_TEST_WITHOUT_FFT_DIR"])
-        print("self.test_without_fft_path:", self.test_without_fft_path)
         self.segmentation_path = os.environ["SEGMENTATION_WORKFLOW_DIR"] # Segmentation data
-        print("self.segmentation_path:", self.segmentation_path)
 
         if build_dataset:
             instances = self.buildDataset(dtype, noise, seed)
@@ -104,7 +94,6 @@ class JIPDataset(CNNDataset):
                 augment_data_aug_motion(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
                 augment_data_aug_ghosting(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
                 augment_data_aug_spike(self.test_path, self.test_dataset_path, self.test_without_fft_path, img_size=image_size)
-                #potential error! (should be: generate_test_labels(...))
                 generate_train_labels(self.num_intensities, self.test_path, self.test_dataset_path, self.test_without_fft_path)
 
             if self.data_type == 'all':
@@ -169,11 +158,10 @@ class JIPDataset(CNNDataset):
             data_ds_path = self.data_without_fft_path
             train_ds_path = self.train_without_fft_path
             test_ds_path = self.test_without_fft_path
-        print("")
+        
         print(f"-> data dataset path: {data_ds_path}")
         print(f"-> train dataset path: {train_ds_path}")
         print(f"-> test dataset path: {test_ds_path}")
-        print("")
         
         # Extract all images, if not already done
         if dtype == 'train':
