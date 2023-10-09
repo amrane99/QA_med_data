@@ -14,6 +14,7 @@ import SimpleITK as sitk
 from mp.models.cnn.mobilenet_v2 import MobileNetV2
 from mp.models.cnn.densenet import Densenet121
 from mp.utils.Unet.UNet import UNet
+from mp.utils.BayeSegMain.models.PUnet import ProbabilisticUnet
 
 # PICKLE
 def pkl_dump(obj, name, path='obj'):
@@ -123,11 +124,14 @@ def load_model(model_name, path, weights):
     #model for spike
     elif model_name == 'Densenet121':
         model = Densenet121()
-    #model for segmentation
+    #model for segmentation of hippocampus
     elif model_name == 'UNet':
         model = UNet(n_channels=1, n_classes=2)
+    #new model for segmentation of cardiac
+    elif model_name == 'PUnet':
+        model = ProbabilisticUnet()
     else:
-        print('Modelname is not found. Only MobileNetV2, Densenet121 or UNet possible')
+        print('Modelname is not found. Only MobileNetV2, Densenet121, UNet or PUnet possible')
         
     if weights:
         state_dict = torch.load(path)

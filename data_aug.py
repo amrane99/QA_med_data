@@ -105,7 +105,7 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             return spike2(image), spike3(image), spike4(image), spike5(image)
     
 
-    else: # dataset == 'acdc'
+    elif dataset == 'acdc':
         # Define augmentation methods
         if noise == 'blur':
             blur2 = random_blur(std=0.8)
@@ -144,6 +144,48 @@ def augment_image_in_four_intensities(image, noise, mean_val, dataset):
             spike3 = random_spike(num_spikes=(2,2), intensity=(0.43, 0.43))
             spike4 = random_spike(num_spikes=(3,3), intensity=(0.50, 0.50))
             spike5 = random_spike(num_spikes=(3,3), intensity=(0.60, 0.60))
+            return spike2(image), spike3(image), spike4(image), spike5(image)
+
+
+    else: # e.g. for MSD data
+        # Define augmentation methods
+        if noise == 'blur':
+            blur2 = random_blur(std=0.4)
+            blur3 = random_blur(std=0.8)
+            blur4 = random_blur(std=1.2)
+            blur5 = random_blur(std=1.6)
+            return blur2(image), blur3(image), blur4(image), blur5(image)
+
+        if noise == 'ghosting':
+            ghosting2 = random_ghosting(num_ghosts = (6,6), intensity=(1.0,1.0))
+            ghosting3 = random_ghosting(num_ghosts = (5,5), intensity=(1.0,1.0))
+            ghosting4 = random_ghosting(num_ghosts = (4,4), intensity=(1.0,1.0))
+            ghosting5 = random_ghosting(num_ghosts = (2,2), intensity=(1.0,1.0))
+            return ghosting2(image), ghosting3(image), ghosting4(image), ghosting5(image)
+
+        if noise == 'motion':
+            motion2 = random_motion(degrees=(2.0,2.0), translation=(2.0,2.0), num_transforms=4)
+            motion3 = random_motion(degrees=(4.0,4.0), translation=(4.0,4.0), num_transforms=4)
+            motion4 = random_motion(degrees=(6.0,6.0), translation=(6.0,6.0), num_transforms=4)
+            motion5 = random_motion(degrees=(8.0,8.0), translation=(8.0,8.0), num_transforms=4)
+            return motion2(image), motion3(image), motion4(image), motion5(image)
+
+        # Mean is set at the mean value of the image and the standard deviation also depends on the mean value of the image.
+        # The mean value of the images differs strongly between different images and the noise is added with absolut values. 
+        # If you don't correlate the input parameters of random_noise with the mean value you receive very different 
+        # impressions of the intensity of the noiseon different images. 
+        if noise == 'noise':
+            noise2 = random_noise(mean=mean_val,std=0.2*mean_val)
+            noise3 = random_noise(mean=mean_val,std=0.3*mean_val)
+            noise4 = random_noise(mean=mean_val,std=0.4*mean_val)
+            noise5 = random_noise(mean=mean_val,std=0.5*mean_val)
+            return noise2(image), noise3(image), noise4(image), noise5(image)
+
+        if noise == 'spike':
+            spike2 = random_spike(num_spikes=(2,2), intensity=(0.28, 0.28))
+            spike3 = random_spike(num_spikes=(2,2), intensity=(0.42, 0.42))
+            spike4 = random_spike(num_spikes=(3,3), intensity=(0.56, 0.56))
+            spike5 = random_spike(num_spikes=(3,3), intensity=(0.75, 0.75))
             return spike2(image), spike3(image), spike4(image), spike5(image)
 
 
@@ -236,6 +278,8 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
     r"""This function augments Data for the artefact motion. 
         It saves the augmented images with and without fft, 
         because the motion classifier uses fft images.
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
+        - min_slices: Specifies the minimal slice number (z-dimension) an image must have to not get ignored when augmenting
     """
 
     torch.manual_seed(42)
@@ -261,7 +305,6 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
             print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
             continue
 
-        # Edit to keep the z-dimension (number of slices) of the actual image
         if keep_slices:
             actual_size = img.GetSize()
             tmp = list(img_size)
@@ -339,6 +382,8 @@ def augment_data_aug_motion(source_path, target_path, without_fft_path, img_size
 
 def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact blur. 
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
+        - min_slices: Specifies the minimal slice number (z-dimension) an image must have to not get ignored when augmenting
     """
     
     torch.manual_seed(42)
@@ -361,7 +406,6 @@ def augment_data_aug_blur(source_path, target_path, without_fft_path, img_size=(
             print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
             continue
 
-        # Edit to keep the z-dimension (number of slices) of the actual image
         if keep_slices:
             actual_size = img.GetSize()
             tmp = list(img_size)
@@ -434,6 +478,8 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
     r"""This function augments Data for the artefact ghosting. 
         It saves the augmented images with and without fft, 
         because the ghosting classifier uses fft images.
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
+        - min_slices: Specifies the minimal slice number (z-dimension) an image must have to not get ignored when augmenting
     """
     
     torch.manual_seed(42)
@@ -456,7 +502,6 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
             print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
             continue
 
-        # Edit to keep the z-dimension (number of slices) of the actual image
         if keep_slices:
             actual_size = img.GetSize()
             tmp = list(img_size)
@@ -528,6 +573,8 @@ def augment_data_aug_ghosting(source_path, target_path, without_fft_path, img_si
 
 def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=(1, 10, 256, 256), min_slices=8, keep_slices=False):
     r"""This function augments Data for the artefact noise. 
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
+        - min_slices: Specifies the minimal slice number (z-dimension) an image must have to not get ignored when augmenting
     """
     
     torch.manual_seed(42)
@@ -550,7 +597,6 @@ def augment_data_aug_noise(source_path, target_path, without_fft_path, img_size=
             print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
             continue
 
-        # Edit to keep the z-dimension (number of slices) of the actual image
         if keep_slices:
             actual_size = img.GetSize()
             tmp = list(img_size)
@@ -623,6 +669,8 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
     r"""This function augments Data for the artefact spike. 
         It saves the augmented images with and without fft, 
         because the spike classifier uses fft images.
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
+        - min_slices: Specifies the minimal slice number (z-dimension) an image must have to not get ignored when augmenting
     """
     
     torch.manual_seed(42)
@@ -644,7 +692,6 @@ def augment_data_aug_spike(source_path, target_path, without_fft_path, img_size=
             print(f"Number of slices of {path} is less than min_slices ({min_slices}) and therefore is ignored.")
             continue
 
-        # Edit to keep the z-dimension (number of slices) of the actual image
         if keep_slices:
             actual_size = img.GetSize()
             tmp = list(img_size)
@@ -749,8 +796,9 @@ def augmentation_segmentation(source_path, target_path, image_type, img_size=(1,
 
 
 # Augments Data for inference
-def augmentation_inference(source_path, target_path, img_size=(1, 10, 256, 256)):
+def augmentation_inference(source_path, target_path, img_size=(1, 10, 256, 256), keep_slices=False):
     r"""This function augments Data for inference. 
+        - keep_slices: Specifies whether to keep the original slice number (z-dimension) of the image or crop/pad to config_size
     """
 
     filenames = [x for x in os.listdir(source_path)]
@@ -759,6 +807,12 @@ def augmentation_inference(source_path, target_path, img_size=(1, 10, 256, 256))
         img = sitk.ReadImage(os.path.join(source_path, filename,'img', 'img.nii.gz')) 
         img_array = sitk.GetArrayFromImage(img)
         
+        if keep_slices:
+            actual_size = img.GetSize()
+            tmp = list(img_size)
+            tmp[1] = actual_size[2]
+            img_size = tuple(tmp)
+
         # Centercrop and pad all images to the same size
         img_array_crop = centre_crop_pad_3d(torch.from_numpy(img_array).unsqueeze_(0), img_size)[0]
 

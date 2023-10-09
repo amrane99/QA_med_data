@@ -1,6 +1,6 @@
 # Quality Assurance for MRI Data
 
-Using this repository, six artifact classifiers can be trained, evaluated and used for inference to assure the quality of Cardiac MRI scans. The cassifiers capture the six most commonly known artifacts: blurring, gaussian noise, ghosting, low resolution, motion and spike artifacts.
+Using this repository, five artifact classifiers can be trained, evaluated and used for inference to assure the quality of Cardiac MRI scans. The cassifiers capture the five most commonly known artifacts: blurring, gaussian noise, ghosting, motion and spike artifacts.
 
 
 ## Installation
@@ -12,7 +12,7 @@ The simplest way to install all dependencies is by using [Anaconda](https://cond
 4. Execute `pip install -r requirements.txt` to install all required packages.
 5. Set your paths in mp.paths.py.
 6. Execute `git update-index --assume-unchanged mp/paths.py` so that changes in the paths file are not tracked in the repository.
-7. Execute `pytest` to ensure that everything is working. Note that one of the tests will test whether at least one GPU is present, if you do not wish to test this mark to ignore. The same holds for tests that used datasets that have to be previously downloaded.
+7. Optional: Execute `pytest` to ensure that everything is working. Note that one of the tests will test whether at least one GPU is present, if you do not wish to test this mark to ignore. The same holds for tests that used datasets that have to be previously downloaded.
 
 
 ## Training Evaluation or Inference

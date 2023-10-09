@@ -4,7 +4,7 @@ import torch
 import SimpleITK as sitk
 import mp.utils.load_restore as lr
 from mp.quantifiers.QualityQuantifier import ImgQualityQuantifier
-from mp.utils.hippocampus_captured import hippocampus_fully_captured
+from mp.utils.cardiac_captured import cardiac_fully_captured
 from mp.utils.create_patches import patchify as Patches
 
 class NoiseQualityQuantifier(ImgQualityQuantifier):
@@ -18,12 +18,10 @@ class NoiseQualityQuantifier(ImgQualityQuantifier):
         path_m = os.path.join(os.environ["OPERATOR_PERSISTENT_DIR"], self.artefact, 'model_state_dict.zip')
 
         # Load the correct model depending on the artefact
-        if self.artefact == 'spike':
-            print('Densenet121 wird geladen')
-            model = lr.load_model('Densenet121', path_m, True) 
-        else: 
-            print('Mobilenet wird geladen')
+        if self.artefact == 'blur' or self.artefact == 'spike':
             model = lr.load_model('MobileNetV2', path_m, True)
+        else:
+            model = lr.load_model('Densenet121', path_m, True)
         
         # Upload Model
         model.to(device)
@@ -42,13 +40,13 @@ class NoiseQualityQuantifier(ImgQualityQuantifier):
                            lung is fully captured)
 
         Returns:
-            fully_captured (bool): a boolean if the hippocampus is fully captured. 
+            fully_captured (bool): a boolean if the cardiac is fully captured. 
             yhat (float): a float that indicates the quality of the image concerning the given artefact.
         """
 
-        # Check if the hippocampus is fully captured
-        #fully_captured = hippocampus_fully_captured(source_path = file, device=device)
-        fully_captured = False
+        # Check if the cardiac is fully captured
+        # WIP: CFC-metric is currently not available
+        fully_captured = False #cardiac_fully_captured(source_path = file, device=device)
         
         # Predict the label for the given Image
         model = self.model
@@ -60,5 +58,5 @@ class NoiseQualityQuantifier(ImgQualityQuantifier):
         _, yhat = torch.max(yhat, 1)
         yhat = self.quality_values[yhat.item()]
 
-        # Return if hippocampus is fully captured and the quality
+        # Return if cardiac is fully captured and the quality
         return fully_captured, yhat

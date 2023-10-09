@@ -190,18 +190,22 @@ if __name__ == "__main__":
     #       plat_decay. --> lr will normally always updated with lr = lr * decay_rate, so consider this when setting decay_rate.
     # NOTE: nr_images specifies the number of images per intensity level, taken to create the dataset
     #       (ie. nr_images from each intensity level results in a dataset of num_intensities x nr_images)
-    #       Note: This behavior changes when used in combination with multiple dataset names (see: NOTE: dataset_names)
-    # NOTE: dataset_names specifies the datasets of the images to be trained in one run (use either dataset_name or dataset_names).
-    #       This parameter is only considered if the number of elements specified in dataset_names is greater than one (outherwise dataset_name is used).
-    #       When there are dataset_names specified, nr_images will be taken from each dataset defined in dataset_names. This requires that the patient folders 
-    #       are subject to a naming convention that includes the corresponding dataset_name as substring and that there are at least nr_imags images per dataset provided.
-    # NOTE: fft specifies whether the fft variant of images for training/testing is used or not (when preprocessing or inference-testing both variants are considered regardless)
+    # NOTE: dataset_name must be a substring of the name of the patient folder of the data to be read in. 
+    # NOTE: In the current state test_ratio is irelevant, because testing is always performed with all test data
+    #       from 'JIP/preprocessed_dirs/output_test' or '.../output_test_without_fft' (assumes manual test split in advance)
     config = {'device': cuda, 'input_shape':  (1, 10, 256, 256), 'augmentation': False, 'mode': mode,
               'data_type': data_type, 'lr': 1e-3, 'batch_size': 16, 'num_intensities': 5, 'nr_epochs': 100, 'decay_type': 'plat_decay',
               'noise': noise, 'weight_decay': 7e-3, 'save_interval': 100, 'msg_bot': msg_bot, 'lr_decay': True, 'decay_rate': 0.9,
-              'bot_msg_interval': 10, 'nr_images': 174, 'val_ratio': 0.2, 'test_ratio': 0, 'augment_strat': 'none',
-              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'patient', 
-              'dataset_names':[], 'artefacts':['blur', 'ghosting', 'motion', 'noise', 'spike'], 'fft': False}
+              'bot_msg_interval': 10, 'nr_images': 174, 'val_ratio': 0.2, 'test_ratio': 1, 'augment_strat': 'none',
+              'train_on': 'mixed', 'data_augmented': True, 'restore': restore, 'store_data': store_data, 'dataset_name':'patient'}
+    
+    #   Framework configuration:
+    #    - Blur:     MobileNetV2 FFT
+    #    - Ghosting: DenseNet121 FFT
+    #    - Motion:   DenseNet121 without FFT
+    #    - Noise:    DenseNet121 without FFT
+    #    - Spike:    MobileNetV2 without FFT
+
 
     # -------------------------
     # Preprocess
@@ -250,11 +254,6 @@ if __name__ == "__main__":
     # Train
     # -------------------------
     if mode == 'train':
-        print(f"Specified parameters for training of {config['noise']}:")
-        print("- nr_epochs:", config['nr_epochs'])
-        print("- lr:", config['lr'])
-        print("- decay_rate:", config['decay_rate'])
-        print("")
         dir_name = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], noise, 'states')
         if try_catch == 0:
             try_catch = 1
@@ -295,7 +294,6 @@ if __name__ == "__main__":
                     print('Model for noise type {} could not be restored/trained. The following error occured: {}.'.format(noise, error))
                     if msg_bot:
                         bot.send_msg('Model for noise type {} could not be restored/trained. The following error occured: {}.'.format(noise, error))
-        print("\nFinished training for:", config['noise'])
     
     # -------------------------
     # Retrain

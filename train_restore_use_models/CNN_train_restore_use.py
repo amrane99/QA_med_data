@@ -93,7 +93,6 @@ def _CNN_initialize_and_train(config):
     device_name = torch.cuda.get_device_name(device)
     print('Device name: {}'.format(device_name))
     output_features = config['num_intensities']
-    #dataset_name = 'Task'
     dataset_name = config['dataset_name']
 
     # 2. Define data
@@ -101,7 +100,7 @@ def _CNN_initialize_and_train(config):
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='train', noise=config['noise'],\
-                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], artefacts=config['artefacts'], fft=config['fft'])
+                     ds_name=dataset_name, restore=config['restore'])
 
     data.add_dataset(JIP)
     train_ds = (dataset_name, 'train')
@@ -136,13 +135,11 @@ def _CNN_initialize_and_train(config):
     # 5. Bring data to Pytorch format
     datasets = dict()
     for ds_name, ds in data.datasets.items():
-        print(f"\nDataset Splits:")
         for split, data_ixs in splits[ds_name][0].items():
-            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
@@ -152,32 +149,12 @@ def _CNN_initialize_and_train(config):
         batch_size = config['batch_size'], shuffle = True)
 
     # 7. Initialize model
-    if config['noise'] == 'xxx':
-        
-        #print(f"\nModel for {config['noise']}: MobileNetV2")
-        #model = MobileNetV2()
-
+    if config['noise'] == 'blur' or config['noise'] == 'spike':
+        print(f"\nModel for {config['noise']}: MobileNetV2")
+        model = MobileNetV2()
+    else:
         print(f"\nModel for {config['noise']}: Densenet121")
         model = Densenet121()
-
-        #print(f"\nModel for {config['noise']}: Densenet161")
-        #model = Densenet161()
-
-        #print(f"\nModel for {config['noise']}: Densenet169")
-        #model = Densenet169()
-
-        #print(f"\nModel for {config['noise']}: Densenet201")
-        #model = Densenet201()
-
-        #print(f"\nModel for {config['noise']}: MobileNetV3 large")
-        #model = MobileNetV3(mode='large')
-
-        #print(f"\nModel for {config['noise']}: MobileNetV3 small")
-        #model = MobileNetV3(mode='small')
-
-    else:
-        print(f"\nModel for {config['noise']}: Densenet161")
-        model = Densenet161()
 
     model.to(device)
 
@@ -204,7 +181,7 @@ def _CNN_initialize_and_train(config):
     JIP_ts = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type='test',\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='test', noise=config['noise'],\
-                     ds_name=dataset_name, ds_names=config['dataset_names'], restore=config['restore'], fft=config['fft'])
+                     ds_name=dataset_name, restore=config['restore'])
     data_ts = Data()
     data_ts.add_dataset(JIP_ts)
 
@@ -226,7 +203,7 @@ def _CNN_initialize_and_train(config):
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 print("aug:", aug)
                 datasets_ts[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
     
     dl = DataLoader(datasets_ts[(test_ds)],
@@ -281,7 +258,7 @@ def _CNN_restore_and_train(config):
             if len(data_ixs) > 0: # Sometimes val indicess may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
     
     # 6. Build train dataloader
@@ -369,25 +346,23 @@ def _CNN_retrain(config):
     device_name = torch.cuda.get_device_name(device)
     print('Device name: {}'.format(device_name))
     output_features = config['num_intensities']
-    dataset_name = ds_name
+    dataset_name = config['dataset_name']
 
     # 2. Define data --> Extra in JIP_dataset that loads everything from preprocessed for train!
     data = Data()
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='train', noise=config['noise'],\
-                     ds_name=dataset_name, restore=config['restore'], fft=config['fft'])
+                     ds_name=dataset_name, restore=config['restore'])
 
     data.add_dataset(JIP)
     train_ds = (dataset_name, 'train')
     val_ds = (dataset_name, 'val')
-    test_ds = (dataset_name, 'test')
 
     # 3. Split data and define path
     splits = dict()
     for ds_name, ds in data.datasets.items():
-        splits[ds_name] = split_dataset(ds, test_ratio = config['test_ratio'], 
-                          val_ratio = config['val_ratio'], nr_repetitions = 1, cross_validation = False)
+        splits[ds_name] = split_dataset_no_test(ds, val_ratio = config['val_ratio'], nr_repetitions = 1)
     paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'states')
     pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'results')
     if not os.path.exists(paths):
@@ -417,7 +392,7 @@ def _CNN_retrain(config):
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
 
     # 6. Build train dataloader
@@ -427,12 +402,14 @@ def _CNN_retrain(config):
         batch_size = config['batch_size'], shuffle = True)
 
     # 7. Load pre-trained model
-    if config['noise'] == 'spike':
-        model = Densenet121()
-    else:
+    if config['noise'] == 'blur' or config['noise'] == 'spike':
+        print(f"\nModel for {config['noise']}: MobileNetV2")
         model = MobileNetV2()
+    else:
+        print(f"\nModel for {config['noise']}: Densenet121")
+        model = Densenet121()
     
-    state_dict = torch.load(os.path.join(os.environ["OPERATOR_PERSISTENT_DIR"], config['noise'], 'model_state_dict.zip'))
+    state_dict = torch.load(os.path.join(os.environ["OPERATOR_PERSISTENT_DIR"], config['noise'], 'model_state_dict.zip'), map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
     model.eval()
     model.to(device)
@@ -457,6 +434,34 @@ def _CNN_retrain(config):
                        store_data = config['store_data'])
                         
     # 10. Build test dataloader
+    JIP_ts = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type='test',\
+                     augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
+                     msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='test', noise=config['noise'],\
+                     ds_name=dataset_name, restore=config['restore'])
+    data_ts = Data()
+    data_ts.add_dataset(JIP_ts)
+
+    test_ds = (dataset_name, 'test')
+
+    splits_ts = dict()
+    for ds_name, ds in data_ts.datasets.items():
+        splits_ts[ds_name] = split_dataset(ds, test_ratio = 1, val_ratio = 0, nr_repetitions = 1, cross_validation = False)
+
+    if splits_ts is not None:
+        lr.save_json(splits_ts, path = paths, name = 'data_splits_ts')
+
+    datasets_ts = dict()
+    for ds_name, ds in data_ts.datasets.items():
+        print(f"\nDataset Splits_ts:")
+        for split, data_ixs in splits_ts[ds_name][0].items():
+            print(f"   - split: {split} has {len(data_ixs)} images")
+            if len(data_ixs) > 0: # Sometimes val indices may be an empty list
+                aug = config['augment_strat'] if not('test' in split) else 'none'
+                print("aug:", aug)
+                datasets_ts[(ds_name, split)] = Pytorch3DQueue(ds, 
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
+                    samples_per_volume = 15)
+    
     dl = DataLoader(datasets[(test_ds)],
             batch_size = config['batch_size'], shuffle = True)
     
@@ -488,7 +493,7 @@ def _CNN_test(config):
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                      msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype=config['mode'], noise=config['noise'],\
-                     ds_name=dataset_name, restore=config['restore'], fft=config['fft'])
+                     ds_name=dataset_name, restore=config['restore'])
     data.add_dataset(JIP)
     test_ds = (dataset_name, 'test')
 
@@ -496,8 +501,6 @@ def _CNN_test(config):
     splits = dict()
     for ds_name, ds in data.datasets.items():
         splits[ds_name] = split_dataset(ds, test_ratio = 1, val_ratio = 0, nr_repetitions = 1, cross_validation = False)
-        print("number:", len(splits[ds_name]))
-        print("splits[ds_name]:", splits[ds_name])
     pathr = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], config['mode']+'_results')
     if not os.path.exists(pathr):
         os.makedirs(pathr)
@@ -511,13 +514,11 @@ def _CNN_test(config):
 
     datasets = dict()
     for ds_name, ds in data.datasets.items():
-        print(f"\nDataset Splits:")
         for split, data_ixs in splits[ds_name][0].items():
-            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
                 datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                    ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
 
     # 5. Build test dataloader
@@ -549,8 +550,6 @@ def _CNN_predict(config):
 
     metrices = dict()
     data_dataset_path = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"])
-    print("\ndata_dataset_path:", data_dataset_path)
-    print("\n")
     study_names = [x for x in os.listdir(data_dataset_path) if '._' not in x]
     #Initialize the NoiseQualityQuantifier for all artefacts
     NQQ_noise = NoiseQualityQuantifier(device=config['device'], artefact_given = 'noise', output_features=config['num_intensities'])
@@ -568,11 +567,11 @@ def _CNN_predict(config):
         JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                         augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                         msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='inference', noise=config['noise'],\
-                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i], fft = False) #NBTN JIPDataset mit einem Inferencebild
+                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i]) #NBTN JIPDataset mit einem Inferencebild
         JIP_fft = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                         augmentation=config['augmentation'], data_augmented=config['data_augmented'], gpu=True, cuda=config['device'],\
                         msg_bot = config['msg_bot'], nr_images=config['nr_images'], build_dataset=True, dtype='inference', noise=config['noise'],\
-                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i], fft = True) #NBTN JIPDataset mit einem Inferencebild
+                        ds_name=config['dataset_name'], restore=config['restore'], inference_name = study_names[i]) #NBTN JIPDataset mit einem Inferencebild
 
         data.add_dataset(JIP)
         data_fft.add_dataset(JIP_fft)
@@ -596,7 +595,7 @@ def _CNN_predict(config):
                 if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                     aug = config['augment_strat'] if not('test' in split) else 'none'
                     datasets[(ds_name, split)] = Pytorch3DQueue(ds, 
-                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                         samples_per_volume = 1) 
 
         datasets_fft = dict()
@@ -605,35 +604,31 @@ def _CNN_predict(config):
                 if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                     aug = config['augment_strat'] if not('test' in split) else 'none'
                     datasets_fft[(ds_name, split)] = Pytorch3DQueue(ds, 
-                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug, # <-------- IMPORTANT: TORCHIO SIZE != CONFIGURATION)
+                        ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                         samples_per_volume = 1) 
 
 
         #4. Initialize dataloader
-        for key, value in datasets.items():
-            print(key, ":", value)
-
         dl = DataLoader(datasets[(inference_ds)], batch_size = 1, shuffle = False)
         dl_fft = DataLoader(datasets_fft[(inference_ds)], batch_size = 1, shuffle = False)
 
-        # 5. Calculate metrices, depending on wether the model was trained with fft images or with ~fft images, fft/~fft images are used for the prediction
+        # 5. Calculate metrices, depending on whether the model was trained with fft images or with ~fft images, fft/~fft images are used for the prediction
         metrices_x = dict()
         file = os.path.join(os.environ["PREPROCESSED_WORKFLOW_DIR"], os.environ["PREPROCESSED_OPERATOR_OUT_DATA_DIR"], study_names[i], 'img', 'img.nii.gz')
-        print("file:", file)
         for num, (x,_) in enumerate(dl):
             
             msg = "Loading SimpleITK images and calculating metrices (doing inference): "
             print (msg, end = "\r")
-            metrices_x['CFC'], metrices_x['noise'] = NQQ_noise.get_quality(x=x, file=file, device=config['device'])  
-            _, metrices_x['blur'] = NQQ_blur.get_quality(x=x, file=file, device=config['device'])  
+            metrices_x['CFC'], metrices_x['motion'] = NQQ_motion.get_quality(x=x, file=file, device=config['device']) 
+            _, metrices_x['noise'] = NQQ_noise.get_quality(x=x, file=file, device=config['device'])
+            _, metrices_x['spike'] = NQQ_spike.get_quality(x=x, file=file, device=config['device'])
 
         for num, (x,_) in enumerate(dl_fft):
             #metrices_x = dict()
             msg = "Loading SimpleITK images and calculating metrices for fft (doing inference): "
             print (msg, end = "\r")
-            _, metrices_x['motion'] = NQQ_motion.get_quality(x=x, file=file, device=config['device'])  
+            _, metrices_x['blur'] = NQQ_blur.get_quality(x=x, file=file, device=config['device']) 
             _, metrices_x['ghosting'] = NQQ_ghosting.get_quality(x=x, file=file, device=config['device'])  
-            _, metrices_x['spike'] = NQQ_spike.get_quality(x=x, file=file, device=config['device'])  
 
         metrices[study_names[i]] = metrices_x
 

@@ -67,15 +67,11 @@ def split_dataset_no_test(
     r"""Splits a dataset into different index folds
     """
     splits = []
-    print(f"-dataset got {dataset.size} instances")
     for k in range(nr_repetitions):
         print('Repetition k {} of {}'.format(k+1, nr_repetitions))
         train, val = split_instances(dataset=dataset, 
             ratio=1-val_ratio, exclude_ixs=dataset.hold_out_ixs, 
             stratisfied=True, respecting_groups=respecting_groups)
-        print(f"-val={val_ratio}: {len(val)}; train={1-val_ratio}: {len(train)}")
-        print("-excluded were:", len(dataset.hold_out_ixs))
-        
         test = []
         splits.append({'train': train, 'val': val, 'test': test})
     return splits

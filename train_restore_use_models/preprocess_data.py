@@ -8,5 +8,5 @@ def preprocess_data(config):
         by saving it in the preprocessed workflow."""
     JIP = JIPDataset(img_size=config['input_shape'], num_intensities=config['num_intensities'], data_type=config['data_type'],\
                      augmentation=config['augmentation'], gpu=True, cuda=config['device'], msg_bot=config['msg_bot'],\
-                     nr_images=config['nr_images'], restore=config['restore'], ds_name=config['dataset_name'], ds_names=config['dataset_names'])
+                     nr_images=config['nr_images'], restore=config['restore'], ds_name=config['dataset_name'])
     return JIP.preprocess()

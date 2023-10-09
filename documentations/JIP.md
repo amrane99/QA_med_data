@@ -3,6 +3,8 @@ With this branch, 5 artifact classifiers (blur, ghosting, motion, noise and spik
 
 
 ## Table Of Contents
+[Configuration](#config)
+
 [JIP Datastructure](#jip-datastructure)
 
 [Command Line Arguments](#command-line-arguments)
@@ -21,6 +23,14 @@ With this branch, 5 artifact classifiers (blur, ghosting, motion, noise and spik
 [Training Segmentation Network](#segmentation)
 
 [Performing inference](#performing-inference)
+
+## Configuration
+Model (DenseNet121, MobileNetV2) and image type (FFT, none-FFT) are selected automatically for training, testing and inference corresponding to the best performance:
+* Blur: MobileNetV2 FFT
+* Ghosting: DenseNet121 FFT
+* Motion: DenseNet121 without FFT
+* Noise: DenseNet121 without FFT
+* Spike: MobileNetV2 without FFT
 
 ## JIP Datastructure
 The whole preprocessing, training, retraining, testing and inference is based on the data stored in the following structure:
@@ -112,6 +122,10 @@ Let's look at some use cases:
     <your_anaconda_env> $ python JIP.py --mode preprocess --datatype segmentation --device 3
     ```
 
+### Notes (Implementation):
+When the preprocessing command is executed, FFT images as well as none-FFT images will be created in the corresponding directories (e.g. "JIP\preprocessed_dirs\output_train" and "JIP\preprocessed_dirs\output_train_without_fft"). An exception is the preprocessing of the inference data, where "JIP/preprocessed_dirs/output_data" is used for both image variants. However, the patient folder naming convention differs: fft.nii.gz and img.nii.gz
+Also, the .json-file labels will be generated twice (as copies) so that they exist in each folder (fft and none-fft).
+
 ## Training classifiers
 When training classifiers from the beginning, one can simply execute the following command with respect to the possible arguments: 
 ```bash
@@ -122,6 +136,11 @@ When training classifiers from the beginning, one can simply execute the followi
 ```
 Again, the restore flag can be used in case of an errorenous termination of the code before the actual termination of the training to continue with the training from the last checkpoint.
 In the [JIP.py](../JIP.py) file is a config dictionary that can be modified by the programmer as well, in which one can specify if the dataset needs to be augmented or not. If no augmentation is necessary, only the provided data will be used.
+
+### Notes (Implementation):
+The data split after execution involves only training and validation data, where the data is taken from the train directory ("JIP\preprocessed_dirs\output_train" or "JIP\preprocessed_dirs\output_train_without_fft").
+The execution of the training command involves an execution of a test after training has finished. The corresponding "test-split" for that is taken from the preprocessed test directory ("JIP\preprocessed_dirs\output_test" or "JIP\preprocessed_dirs\output_test_without_fft"). That means the framework assumes a manual test split in advance. It is also not provided to specify the number of patients for a test (all images will be taken from the test data folder); that is only possible for training.
+
 
 ## Retraining classifiers
 The retraining of classifiers is used for retraining already trained classifiers with new data. This is mainly used by institutes that are provided with pre-trained classifiers and then can retrain them with their own in-house dataset. Those pre-trained classifiers are trained on a mixed dataset including the DecathHip and the HarP datasets whereas data augmentation has been performed on those datasets as well to ensure equally distributed data among all intensity classes during training. To run such a retrain, obviously the corresponding classifier needs to exist and the own in-house data needs to be stored under `JIP/train_dirs/input` and preprocessed as well. The training can then be started using the following command:
@@ -162,15 +181,17 @@ After sucessfull termination, the `metrics.json` file is generated and has the f
 ```
 {	
     "patient_00":	{
-                        "HFC": true,
+                        "CFC": true,
                         "blur": 0.2,
                         "ghosting": 0.75,
                         "motion": 1,
                         "noise": 0.5,
-                        "resolution": 0.75,
                         "spike": 1
                     },
     ...
 }
 ```
-For every patient folder in `JIP/data_dirs/input` the same 5 quality metrics will be calculated as well as the `Hippocampus Fully Captured (HFC)` metric, which indicates if the hippocampus in a MRI scan is fully captured or if parts of the hippocampus are missing.
+For every patient folder in `JIP/data_dirs/input` the same 5 quality metrics will be calculated as well as the `Cardiac Fully Captured (CFC)` metric, which indicates if the cardiac in a MRI scan is fully captured or if parts of the cardiac are missing.
+
+## Note:
+The `Cardiac Fully Captured (CFC)` metric is currently not completely implemented.

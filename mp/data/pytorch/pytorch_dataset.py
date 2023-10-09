@@ -33,12 +33,12 @@ class PytorchDataset(Dataset):
             if ix in ix_lst]
         self.size = size
 
-        ######-----------------------------@ Compromise-Solution @-----------------------------######
-        ### This is a solution to store the splits of data used for train/test/val ###
-        ### This is only needed if training is performed                                                                                  ###
-        
-        #<ds_name>_patient_<id>_<noise><intensity>
-
+        # Optional:
+        # This code can be used when training to save for each data split (tr/val/ts) the corresponding folder names of the selected patients.
+        # The patient names are saved in a .json file in the train-output directory: .../JIP/train_dirs/output/<artifact>_cardiac/states
+        # Note: Activating this only might be relevant if training is performed
+        # Note: Requires naming convention for patient folders: <ds_name>_patient_<id>_<noise><intensity>
+        '''
         last_segment = self.instances[0].name.split('_')[-1]
         digit_position = next((i for i, c in enumerate(last_segment) if c.isdigit()), None)
         if digit_position is not None:
@@ -52,12 +52,9 @@ class PytorchDataset(Dataset):
         data_list = []
         for i, instance in enumerate(self.instances):
             data_list.append(instance.name)
-            #print(f"        {i}: {instance.name}")
         
         lr.save_split_name_list(path, "split_data_names",  data_list)
-        
-        ###                                                                                   ###
-        ######-----------------------------------------------------------------------------######
+        '''
 
 
     def __len__(self):

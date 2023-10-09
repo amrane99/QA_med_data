@@ -3,14 +3,12 @@ import json
 
 def generate_train_labels(num_intensities, source_path, target_path, without_fft_path, swap_labels=True, ds_name = "Task"): #NBTN swap_label False--> true
     r"""This function generates the labels.json file that is necessary for training."""
-    # Foldernames are patient_id
+    # Foldernames are <ds_name>_patient_<id>
     print('genetrate_train_label')
 
-    filenames = [x for x in os.listdir(source_path) if '._' not in x] #and ds_name in x\
-                 #and not 'blur' in x and not 'resolution' in x and not 'ghosting' in x and not 'motion' in x\
-                 #and not 'noise' in x and not 'spike' in x] 
+    filenames = [x for x in os.listdir(source_path) if '._' not in x]
 
-    # Generate labels  with augmentation
+    # Generate labels with augmentation
     labels = dict()
     for name in filenames:
         labels[str(name)] = 5/num_intensities
@@ -102,7 +100,7 @@ def generate_train_labels(num_intensities, source_path, target_path, without_fft
 
 def generate_test_labels(num_intensities, source_path, target_path, ds_name ="Task"):
     r"""This function generates the labels.json file that is necessary for testing on an unseen dataset."""
-    # Foldernames are patient_id
+    # Foldernames are <ds_name>_patient_<id>
     filenames = [x for x in os.listdir(source_path) if 'DS_Store' not in x and ds_name in x\
                  and not 'blur' in x and not 'resolution' in x and not 'ghosting' in x and not 'motion' in x\
                  and not 'noise' in x and not 'spike' in x] 
