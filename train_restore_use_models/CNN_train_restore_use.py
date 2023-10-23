@@ -196,12 +196,9 @@ def _CNN_initialize_and_train(config):
 
     datasets_ts = dict()
     for ds_name, ds in data_ts.datasets.items():
-        print(f"\nDataset Splits_ts:")
         for split, data_ixs in splits_ts[ds_name][0].items():
-            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
-                print("aug:", aug)
                 datasets_ts[(ds_name, split)] = Pytorch3DQueue(ds, 
                     ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
@@ -243,8 +240,8 @@ def _CNN_restore_and_train(config):
     test_ds = (dataset_name, 'test')
 
     # 3. Restore and define path
-    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'states')
-    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'results')
+    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'states')
+    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'results')
     splits = lr.load_json(path=paths, name='data_splits')
     print('Restored existing splits')
 
@@ -269,10 +266,10 @@ def _CNN_restore_and_train(config):
     
     # 7. Initialize model
     model = CNN_Net3D(output_features) 
-    if config['noise'] == 'spike':
-        model = Densenet121()
-    else:
+    if config['noise'] == 'blur' or config['noise'] == 'spike':
         model = MobileNetV2()
+    else:
+        model = Densenet121()
     model.to(device)
 
     # 8. Define loss and optimizer
@@ -363,8 +360,8 @@ def _CNN_retrain(config):
     splits = dict()
     for ds_name, ds in data.datasets.items():
         splits[ds_name] = split_dataset_no_test(ds, val_ratio = config['val_ratio'], nr_repetitions = 1)
-    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'states')
-    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], 'results')
+    paths = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'states')
+    pathr = os.path.join(os.environ["TRAIN_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", 'results')
     if not os.path.exists(paths):
         os.makedirs(paths)
     else:
@@ -452,17 +449,14 @@ def _CNN_retrain(config):
 
     datasets_ts = dict()
     for ds_name, ds in data_ts.datasets.items():
-        print(f"\nDataset Splits_ts:")
         for split, data_ixs in splits_ts[ds_name][0].items():
-            print(f"   - split: {split} has {len(data_ixs)} images")
             if len(data_ixs) > 0: # Sometimes val indices may be an empty list
                 aug = config['augment_strat'] if not('test' in split) else 'none'
-                print("aug:", aug)
                 datasets_ts[(ds_name, split)] = Pytorch3DQueue(ds, 
                     ix_lst = data_ixs, size = (1, 256, 256, 10), aug_key = aug,
                     samples_per_volume = 15)
     
-    dl = DataLoader(datasets[(test_ds)],
+    dl = DataLoader(datasets_ts[(test_ds)],
             batch_size = config['batch_size'], shuffle = True)
     
     # 11. Test model
@@ -501,7 +495,7 @@ def _CNN_test(config):
     splits = dict()
     for ds_name, ds in data.datasets.items():
         splits[ds_name] = split_dataset(ds, test_ratio = 1, val_ratio = 0, nr_repetitions = 1, cross_validation = False)
-    pathr = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise'], config['mode']+'_results')
+    pathr = os.path.join(os.environ["TEST_WORKFLOW_DIR"], os.environ["OPERATOR_OUT_DIR"], config['noise']+"_cardiac", config['mode']+'_results')
     if not os.path.exists(pathr):
         os.makedirs(pathr)
     else:
@@ -526,10 +520,12 @@ def _CNN_test(config):
 
     # 6. Load pre-trained model
     path_m = os.path.join(os.environ["OPERATOR_PERSISTENT_DIR"], config['noise'], 'model_state_dict.zip')
-    if config['noise'] == 'spike':
-        model = lr.load_model('Densenet121', path_m, True)
-    else:
+    if config['noise'] == 'blur' or config['noise'] == 'spike':
+        print(f"\nModel for {config['noise']}: MobileNetV2")
         model = lr.load_model('MobileNetV2', path_m, True)
+    else:
+        print(f"\nModel for {config['noise']}: Densenet121")
+        model = lr.load_model('Densenet121', path_m, True)
     model.to(device)
 
     # 7. Define Loss and Agent

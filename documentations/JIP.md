@@ -3,8 +3,6 @@ With this branch, 5 artifact classifiers (blur, ghosting, motion, noise and spik
 
 
 ## Table Of Contents
-[Configuration](#config)
-
 [JIP Datastructure](#jip-datastructure)
 
 [Command Line Arguments](#command-line-arguments)
@@ -24,13 +22,8 @@ With this branch, 5 artifact classifiers (blur, ghosting, motion, noise and spik
 
 [Performing inference](#performing-inference)
 
-## Configuration
-Model (DenseNet121, MobileNetV2) and image type (FFT, none-FFT) are selected automatically for training, testing and inference corresponding to the best performance:
-* Blur: MobileNetV2 FFT
-* Ghosting: DenseNet121 FFT
-* Motion: DenseNet121 without FFT
-* Noise: DenseNet121 without FFT
-* Spike: MobileNetV2 without FFT
+[Configuration](#config)
+
 
 ## JIP Datastructure
 The whole preprocessing, training, retraining, testing and inference is based on the data stored in the following structure:
@@ -169,6 +162,9 @@ To train the Segmentation Network on GPU device 4 use the command:
 <your_anaconda_env> $ python JIP.py --mode segmentation --device 4
 ```
 
+### Note:
+Currently, it is not intended to train the segmentation network. Therefore, no explicit adaptation of the code for cardiac scans has been performed.
+
 
 ## Performing inference
 Performing inference on data is very straight-forward. It is important that all 5 artifact classifiers are trained and do exist in `JIP/data_dirs/persistent`. The provided preprocessed data from `JIP/data_dirs/input` will then be used and the results for every scan per classifier will be stored in a metrics file, `metrics.json`. After the sucessfull termination the file will be located at `JIP/data_dirs/output`. To start the inference, the following command needs to be executed:
@@ -193,5 +189,15 @@ After sucessfull termination, the `metrics.json` file is generated and has the f
 ```
 For every patient folder in `JIP/data_dirs/input` the same 5 quality metrics will be calculated as well as the `Cardiac Fully Captured (CFC)` metric, which indicates if the cardiac in a MRI scan is fully captured or if parts of the cardiac are missing.
 
-## Note:
+### Note:
 The `Cardiac Fully Captured (CFC)` metric is currently not completely implemented.
+(The CFC uses an prediction step from an external [segmentation project](https://github.com/shangqigao/BayeSeg) included, which is functionally not integrated yet.)
+
+
+## Configuration
+Model (DenseNet121/MobileNetV2) and image type (w/o FFT) is selected automatically for training, testing and inference corresponding to the best performance:
+* Blur: MobileNetV2 FFT
+* Ghosting: DenseNet121 FFT
+* Motion: DenseNet121 without FFT
+* Noise: DenseNet121 without FFT
+* Spike: MobileNetV2 without FFT
